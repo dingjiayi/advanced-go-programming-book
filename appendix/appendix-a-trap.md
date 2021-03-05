@@ -1,4 +1,4 @@
-# 附录A：Go语言常见坑
+# 附录A: Go语言常见坑
 
 这里列举的Go语言常见坑都是符合Go语言语法的，可以正常的编译，但是可能是运行结果错误，或者是有资源泄漏的风险。
 
@@ -8,16 +8,16 @@
 
 ```go
 func main() {
-	var a = []interface{}{1, 2, 3}
+    var a = []interface{}{1, 2, 3}
 
-	fmt.Println(a)
-	fmt.Println(a...)
+    fmt.Println(a)
+    fmt.Println(a...)
 }
 ```
 
 不管是否展开，编译器都无法发现错误，但是输出是不同的：
 
-```
+```text
 [1 2 3]
 1 2 3
 ```
@@ -28,14 +28,14 @@ func main() {
 
 ```go
 func main() {
-	x := [3]int{1, 2, 3}
+    x := [3]int{1, 2, 3}
 
-	func(arr [3]int) {
-		arr[0] = 7
-		fmt.Println(arr)
-	}(x)
+    func(arr [3]int) {
+        arr[0] = 7
+        fmt.Println(arr)
+    }(x)
 
-	fmt.Println(x)
+    fmt.Println(x)
 }
 ```
 
@@ -47,15 +47,15 @@ map是一种hash表实现，每次遍历的顺序都可能不一样。
 
 ```go
 func main() {
-	m := map[string]string{
-		"1": "1",
-		"2": "2",
-		"3": "3",
-	}
+    m := map[string]string{
+        "1": "1",
+        "2": "2",
+        "3": "3",
+    }
 
-	for k, v := range m {
-		println(k, v)
-	}
+    for k, v := range m {
+        println(k, v)
+    }
 }
 ```
 
@@ -65,10 +65,10 @@ func main() {
 
 ```go
 func Foo() (err error) {
-	if err := Bar(); err != nil {
-		return
-	}
-	return
+    if err := Bar(); err != nil {
+        return
+    }
+    return
 }
 ```
 
@@ -78,8 +78,8 @@ recover捕获的是祖父级调用时的异常，直接调用时无效：
 
 ```go
 func main() {
-	recover()
-	panic(1)
+    recover()
+    panic(1)
 }
 ```
 
@@ -87,8 +87,8 @@ func main() {
 
 ```go
 func main() {
-	defer recover()
-	panic(1)
+    defer recover()
+    panic(1)
 }
 ```
 
@@ -96,10 +96,10 @@ defer调用时多层嵌套依然无效：
 
 ```go
 func main() {
-	defer func() {
-		func() { recover() }()
-	}()
-	panic(1)
+    defer func() {
+        func() { recover() }()
+    }()
+    panic(1)
 }
 ```
 
@@ -107,10 +107,10 @@ func main() {
 
 ```go
 func main() {
-	defer func() {
-		recover()
-	}()
-	panic(1)
+    defer func() {
+        recover()
+    }()
+    panic(1)
 }
 ```
 
@@ -120,7 +120,7 @@ func main() {
 
 ```go
 func main() {
-	go println("hello")
+    go println("hello")
 }
 ```
 
@@ -130,8 +130,8 @@ func main() {
 
 ```go
 func main() {
-	go println("hello")
-	time.Sleep(time.Second)
+    go println("hello")
+    time.Sleep(time.Second)
 }
 ```
 
@@ -139,8 +139,8 @@ func main() {
 
 ```go
 func main() {
-	go println("hello")
-	runtime.Gosched()
+    go println("hello")
+    runtime.Gosched()
 }
 ```
 
@@ -150,33 +150,33 @@ Goroutine是协作式抢占调度，Goroutine本身不会主动放弃CPU：
 
 ```go
 func main() {
-	runtime.GOMAXPROCS(1)
+    runtime.GOMAXPROCS(1)
 
-	go func() {
-		for i := 0; i < 10; i++ {
-			fmt.Println(i)
-		}
-	}()
+    go func() {
+        for i := 0; i < 10; i++ {
+            fmt.Println(i)
+        }
+    }()
 
-	for {} // 占用CPU
+    for {} // 占用CPU
 }
 ```
 
-解决的方法是在for循环加入runtime.Gosched()调度函数：
+解决的方法是在for循环加入runtime.Gosched\(\)调度函数：
 
 ```go
 func main() {
-	runtime.GOMAXPROCS(1)
+    runtime.GOMAXPROCS(1)
 
-	go func() {
-		for i := 0; i < 10; i++ {
-			fmt.Println(i)
-		}
-	}()
+    go func() {
+        for i := 0; i < 10; i++ {
+            fmt.Println(i)
+        }
+    }()
 
-	for {
-		runtime.Gosched()
-	}
+    for {
+        runtime.Gosched()
+    }
 }
 ```
 
@@ -184,16 +184,16 @@ func main() {
 
 ```go
 func main() {
-	runtime.GOMAXPROCS(1)
+    runtime.GOMAXPROCS(1)
 
-	go func() {
-		for i := 0; i < 10; i++ {
-			fmt.Println(i)
-		}
-		os.Exit(0)
-	}()
+    go func() {
+        for i := 0; i < 10; i++ {
+            fmt.Println(i)
+        }
+        os.Exit(0)
+    }()
 
-	select{}
+    select{}
 }
 ```
 
@@ -206,15 +206,15 @@ var msg string
 var done bool
 
 func setup() {
-	msg = "hello, world"
-	done = true
+    msg = "hello, world"
+    done = true
 }
 
 func main() {
-	go setup()
-	for !done {
-	}
-	println(msg)
+    go setup()
+    for !done {
+    }
+    println(msg)
 }
 ```
 
@@ -225,27 +225,28 @@ var msg string
 var done = make(chan bool)
 
 func setup() {
-	msg = "hello, world"
-	done <- true
+    msg = "hello, world"
+    done <- true
 }
 
 func main() {
-	go setup()
-	<-done
-	println(msg)
+    go setup()
+    <-done
+    println(msg)
 }
 ```
+
 msg的写入是在channel发送之前，所以能保证打印`hello, world`
 
 ## 闭包错误引用同一个变量
 
 ```go
 func main() {
-	for i := 0; i < 5; i++ {
-		defer func() {
-			println(i)
-		}()
-	}
+    for i := 0; i < 5; i++ {
+        defer func() {
+            println(i)
+        }()
+    }
 }
 ```
 
@@ -253,12 +254,12 @@ func main() {
 
 ```go
 func main() {
-	for i := 0; i < 5; i++ {
-		i := i
-		defer func() {
-			println(i)
-		}()
-	}
+    for i := 0; i < 5; i++ {
+        i := i
+        defer func() {
+            println(i)
+        }()
+    }
 }
 ```
 
@@ -266,11 +267,11 @@ func main() {
 
 ```go
 func main() {
-	for i := 0; i < 5; i++ {
-		defer func(i int) {
-			println(i)
-		}(i)
-	}
+    for i := 0; i < 5; i++ {
+        defer func(i int) {
+            println(i)
+        }(i)
+    }
 }
 ```
 
@@ -280,13 +281,13 @@ defer在函数退出时才能执行，在for执行defer会导致资源延迟释�
 
 ```go
 func main() {
-	for i := 0; i < 5; i++ {
-		f, err := os.Open("/path/to/file")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-	}
+    for i := 0; i < 5; i++ {
+        f, err := os.Open("/path/to/file")
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer f.Close()
+    }
 }
 ```
 
@@ -294,15 +295,15 @@ func main() {
 
 ```go
 func main() {
-	for i := 0; i < 5; i++ {
-		func() {
-			f, err := os.Open("/path/to/file")
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer f.Close()
-		}()
-	}
+    for i := 0; i < 5; i++ {
+        func() {
+            f, err := os.Open("/path/to/file")
+            if err != nil {
+                log.Fatal(err)
+            }
+            defer f.Close()
+        }()
+    }
 }
 ```
 
@@ -312,18 +313,18 @@ func main() {
 
 ```go
 func main() {
-	headerMap := make(map[string][]byte)
+    headerMap := make(map[string][]byte)
 
-	for i := 0; i < 5; i++ {
-		name := "/path/to/file"
-		data, err := ioutil.ReadFile(name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		headerMap[name] = data[:1]
-	}
+    for i := 0; i < 5; i++ {
+        name := "/path/to/file"
+        data, err := ioutil.ReadFile(name)
+        if err != nil {
+            log.Fatal(err)
+        }
+        headerMap[name] = data[:1]
+    }
 
-	// do some thing
+    // do some thing
 }
 ```
 
@@ -331,18 +332,18 @@ func main() {
 
 ```go
 func main() {
-	headerMap := make(map[string][]byte)
+    headerMap := make(map[string][]byte)
 
-	for i := 0; i < 5; i++ {
-		name := "/path/to/file"
-		data, err := ioutil.ReadFile(name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		headerMap[name] = append([]byte{}, data[:1]...)
-	}
+    for i := 0; i < 5; i++ {
+        name := "/path/to/file"
+        data, err := ioutil.ReadFile(name)
+        if err != nil {
+            log.Fatal(err)
+        }
+        headerMap[name] = append([]byte{}, data[:1]...)
+    }
 
-	// do some thing
+    // do some thing
 }
 ```
 
@@ -352,11 +353,11 @@ func main() {
 
 ```go
 func returnsError() error {
-	var p *MyError = nil
-	if bad() {
-		p = ErrBad
-	}
-	return p // Will always return a non-nil error.
+    var p *MyError = nil
+    if bad() {
+        p = ErrBad
+    }
+    return p // Will always return a non-nil error.
 }
 ```
 
@@ -366,12 +367,12 @@ Go语言中对象的地址可能发生变化，因此指针不能从其它非指
 
 ```go
 func main() {
-	var x int = 42
-	var p uintptr = uintptr(unsafe.Pointer(&x))
+    var x int = 42
+    var p uintptr = uintptr(unsafe.Pointer(&x))
 
-	runtime.GC()
-	var px *int = (*int)(unsafe.Pointer(p))
-	println(*px)
+    runtime.GC()
+    var px *int = (*int)(unsafe.Pointer(p))
+    println(*px)
 }
 ```
 
@@ -385,22 +386,22 @@ Go语言是带内存自动回收的特性，因此内存一般不会泄漏。但
 
 ```go
 func main() {
-	ch := func() <-chan int {
-		ch := make(chan int)
-		go func() {
-			for i := 0; ; i++ {
-				ch <- i
-			}
-		} ()
-		return ch
-	}()
+    ch := func() <-chan int {
+        ch := make(chan int)
+        go func() {
+            for i := 0; ; i++ {
+                ch <- i
+            }
+        } ()
+        return ch
+    }()
 
-	for v := range ch {
-		fmt.Println(v)
-		if v == 5 {
-			break
-		}
-	}
+    for v := range ch {
+        fmt.Println(v)
+        if v == 5 {
+            break
+        }
+    }
 }
 ```
 
@@ -408,33 +409,33 @@ func main() {
 
 我们可以通过context包来避免这个问题：
 
-
 ```go
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+    ctx, cancel := context.WithCancel(context.Background())
 
-	ch := func(ctx context.Context) <-chan int {
-		ch := make(chan int)
-		go func() {
-			for i := 0; ; i++ {
-				select {
-				case <- ctx.Done():
-					return
-				case ch <- i:
-				}
-			}
-		} ()
-		return ch
-	}(ctx)
+    ch := func(ctx context.Context) <-chan int {
+        ch := make(chan int)
+        go func() {
+            for i := 0; ; i++ {
+                select {
+                case <- ctx.Done():
+                    return
+                case ch <- i:
+                }
+            }
+        } ()
+        return ch
+    }(ctx)
 
-	for v := range ch {
-		fmt.Println(v)
-		if v == 5 {
-			cancel()
-			break
-		}
-	}
+    for v := range ch {
+        fmt.Println(v)
+        if v == 5 {
+            cancel()
+            break
+        }
+    }
 }
 ```
 
 当main函数在break跳出循环时，通过调用`cancel()`来通知后台Goroutine退出，这样就避免了Goroutine的泄漏。
+

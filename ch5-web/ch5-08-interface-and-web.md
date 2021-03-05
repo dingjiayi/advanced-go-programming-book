@@ -24,13 +24,13 @@
 
 ```go
 func BusinessProcess(ctx context.Context, params Params) (resp, error){
-	ValidateLogin()
-	ValidateParams()
-	AntispamCheck()
-	GetPrice()
-	CreateOrder()
-	UpdateUserStatus()
-	NotifyDownstreamSystems()
+    ValidateLogin()
+    ValidateParams()
+    AntispamCheck()
+    GetPrice()
+    CreateOrder()
+    UpdateUserStatus()
+    NotifyDownstreamSystems()
 }
 ```
 
@@ -40,13 +40,13 @@ func BusinessProcess(ctx context.Context, params Params) (resp, error){
 
 ```go
 func CreateOrder() {
-	ValidateDistrict()    // 判断是否是地区限定商品
-	ValidateVIPProduct()  // 检查是否是只提供给 vip 的商品
-	GetUserInfo()         // 从用户系统获取更详细的用户信息
-	GetProductDesc()      // 从商品系统中获取商品在该时间点的详细信息
-	DecrementStorage()    // 扣减库存
-	CreateOrderSnapshot() // 创建订单快照
-	return CreateSuccess
+    ValidateDistrict()    // 判断是否是地区限定商品
+    ValidateVIPProduct()  // 检查是否是只提供给 vip 的商品
+    GetUserInfo()         // 从用户系统获取更详细的用户信息
+    GetProductDesc()      // 从商品系统中获取商品在该时间点的详细信息
+    DecrementStorage()    // 扣减库存
+    CreateOrderSnapshot() // 创建订单快照
+    return CreateSuccess
 }
 ```
 
@@ -63,12 +63,12 @@ func CreateOrder() {
 ```go
 // OrderCreator 创建订单流程
 type OrderCreator interface {
-	ValidateDistrict()    // 判断是否是地区限定商品
-	ValidateVIPProduct()  // 检查是否是只提供给 vip 的商品
-	GetUserInfo()         // 从用户系统获取更详细的用户信息
-	GetProductDesc()      // 从商品系统中获取商品在该时间点的详细信息
-	DecrementStorage()    // 扣减库存
-	CreateOrderSnapshot() // 创建订单快照
+    ValidateDistrict()    // 判断是否是地区限定商品
+    ValidateVIPProduct()  // 检查是否是只提供给 vip 的商品
+    GetUserInfo()         // 从用户系统获取更详细的用户信息
+    GetProductDesc()      // 从商品系统中获取商品在该时间点的详细信息
+    DecrementStorage()    // 扣减库存
+    CreateOrderSnapshot() // 创建订单快照
 }
 ```
 
@@ -78,9 +78,9 @@ type OrderCreator interface {
 
 如果我们正在做的是平台系统，需要由平台来定义统一的业务流程和业务规范，那么基于接口的抽象就是有意义的。举个例子：
 
-![interface-impl](../images/ch6-interface-impl.uml.png)
+![interface-impl](../.gitbook/assets/ch6-interface-impl.uml.png)
 
-*图 5-19 实现公有的接口*
+_图 5-19 实现公有的接口_
 
 平台需要服务多条业务线，但数据定义需要统一，所以希望都能走平台定义的流程。作为平台方，我们可以定义一套类似上文的接口，然后要求接入方的业务必须将这些接口都实现。如果接口中有其不需要的步骤，那么只要返回`nil`，或者忽略就好。
 
@@ -88,30 +88,30 @@ type OrderCreator interface {
 
 ```go
 import (
-	"sample.com/travelorder"
-	"sample.com/marketorder"
+    "sample.com/travelorder"
+    "sample.com/marketorder"
 )
 
 func CreateOrder() {
-	switch businessType {
-	case TravelBusiness:
-		travelorder.CreateOrder()
-	case MarketBusiness:
-		marketorder.CreateOrderForMarket()
-	default:
-		return errors.New("not supported business")
-	}
+    switch businessType {
+    case TravelBusiness:
+        travelorder.CreateOrder()
+    case MarketBusiness:
+        marketorder.CreateOrderForMarket()
+    default:
+        return errors.New("not supported business")
+    }
 }
 
 func ValidateUser() {
-	switch businessType {
-	case TravelBusiness:
-		travelorder.ValidateUserVIP()
-	case MarketBusiness:
-		marketorder.ValidateUserRegistered()
-	default:
-		return errors.New("not supported business")
-	}
+    switch businessType {
+    case TravelBusiness:
+        travelorder.ValidateUserVIP()
+    case MarketBusiness:
+        marketorder.ValidateUserRegistered()
+    default:
+        return errors.New("not supported business")
+    }
 }
 
 // ...
@@ -124,35 +124,35 @@ switch ...
 
 ```go
 type BusinessInstance interface {
-	ValidateLogin()
-	ValidateParams()
-	AntispamCheck()
-	GetPrice()
-	CreateOrder()
-	UpdateUserStatus()
-	NotifyDownstreamSystems()
+    ValidateLogin()
+    ValidateParams()
+    AntispamCheck()
+    GetPrice()
+    CreateOrder()
+    UpdateUserStatus()
+    NotifyDownstreamSystems()
 }
 
 func entry() {
-	var bi BusinessInstance
-	switch businessType {
-		case TravelBusiness:
-			bi = travelorder.New()
-		case MarketBusiness:
-			bi = marketorder.New()
-		default:
-			return errors.New("not supported business")
-	}
+    var bi BusinessInstance
+    switch businessType {
+        case TravelBusiness:
+            bi = travelorder.New()
+        case MarketBusiness:
+            bi = marketorder.New()
+        default:
+            return errors.New("not supported business")
+    }
 }
 
 func BusinessProcess(bi BusinessInstance) {
-	bi.ValidateLogin()
-	bi.ValidateParams()
-	bi.AntispamCheck()
-	bi.GetPrice()
-	bi.CreateOrder()
-	bi.UpdateUserStatus()
-	bi.NotifyDownstreamSystems()
+    bi.ValidateLogin()
+    bi.ValidateParams()
+    bi.AntispamCheck()
+    bi.GetPrice()
+    bi.CreateOrder()
+    bi.UpdateUserStatus()
+    bi.NotifyDownstreamSystems()
 }
 ```
 
@@ -164,7 +164,7 @@ Go被人称道的最多的地方是其接口设计的正交性，模块之间不
 
 ```go
 type Writer interface {
-	Write(p []byte) (n int, err error)
+    Write(p []byte) (n int, err error)
 }
 ```
 
@@ -174,7 +174,7 @@ type Writer interface {
 type MyType struct {}
 
 func (m MyType) Write(p []byte) (n int, err error) {
-	return 0, nil
+    return 0, nil
 }
 ```
 
@@ -184,7 +184,7 @@ func (m MyType) Write(p []byte) (n int, err error) {
 package log
 
 func SetOutput(w io.Writer) {
-	output = w
+    output = w
 }
 ```
 
@@ -196,7 +196,7 @@ package my-business
 import "xy.com/log"
 
 func init() {
-	log.SetOutput(MyType)
+    log.SetOutput(MyType)
 }
 ```
 
@@ -210,8 +210,8 @@ func init() {
 package main
 
 type OrderCreator interface {
-	ValidateUser()
-	CreateOrder()
+    ValidateUser()
+    CreateOrder()
 }
 
 type BookOrderCreator struct{}
@@ -219,21 +219,21 @@ type BookOrderCreator struct{}
 func (boc BookOrderCreator) ValidateUser() {}
 
 func createOrder(oc OrderCreator) {
-	oc.ValidateUser()
-	oc.CreateOrder()
+    oc.ValidateUser()
+    oc.CreateOrder()
 }
 
 func main() {
-	createOrder(BookOrderCreator{})
+    createOrder(BookOrderCreator{})
 }
 ```
 
 会报出下述错误。
 
-```shell
+```text
 # command-line-arguments
 ./a.go:18:30: cannot use BookOrderCreator literal (type BookOrderCreator) as type OrderCreator in argument to createOrder:
-	BookOrderCreator does not implement OrderCreator (missing CreateOrder method)
+    BookOrderCreator does not implement OrderCreator (missing CreateOrder method)
 ```
 
 所以接口也可以认为是一种编译期进行检查的保证类型安全的手段。
@@ -244,15 +244,15 @@ func main() {
 
 ```go
 func entry() {
-	var bi BusinessInstance
-	switch businessType {
-	case TravelBusiness:
-		bi = travelorder.New()
-	case MarketBusiness:
-		bi = marketorder.New()
-	default:
-		return errors.New("not supported business")
-	}
+    var bi BusinessInstance
+    switch businessType {
+    case TravelBusiness:
+        bi = travelorder.New()
+    case MarketBusiness:
+        bi = marketorder.New()
+    default:
+        return errors.New("not supported business")
+    }
 }
 ```
 
@@ -260,15 +260,16 @@ func entry() {
 
 ```go
 var businessInstanceMap = map[int]BusinessInstance {
-	TravelBusiness : travelorder.New(),
-	MarketBusiness : marketorder.New(),
+    TravelBusiness : travelorder.New(),
+    MarketBusiness : marketorder.New(),
 }
 
 func entry() {
-	bi := businessInstanceMap[businessType]
+    bi := businessInstanceMap[businessType]
 }
 ```
 
 表驱动的设计方式，很多设计模式相关的书籍并没有把它作为一种设计模式来讲，但我认为这依然是一种非常重要的帮助我们来简化代码的手段。在日常的开发工作中可以多多思考，哪些不必要的`switch case`可以用一个字典和一行代码就可以轻松搞定。
 
 当然，表驱动也不是没有缺点，因为需要对输入`key`计算哈希，在性能敏感的场合，需要多加斟酌。
+

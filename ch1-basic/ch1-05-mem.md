@@ -24,32 +24,32 @@ Go的运行时还包含了其自己的调度器，这个调度器使用了一些
 
 ```go
 import (
-	"sync"
+    "sync"
 )
 
 var total struct {
-	sync.Mutex
-	value int
+    sync.Mutex
+    value int
 }
 
 func worker(wg *sync.WaitGroup) {
-	defer wg.Done()
+    defer wg.Done()
 
-	for i := 0; i <= 100; i++ {
-		total.Lock()
-		total.value += i
-		total.Unlock()
-	}
+    for i := 0; i <= 100; i++ {
+        total.Lock()
+        total.value += i
+        total.Unlock()
+    }
 }
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go worker(&wg)
-	go worker(&wg)
-	wg.Wait()
+    var wg sync.WaitGroup
+    wg.Add(2)
+    go worker(&wg)
+    go worker(&wg)
+    wg.Wait()
 
-	fmt.Println(total.value)
+    fmt.Println(total.value)
 }
 ```
 
@@ -59,28 +59,28 @@ func main() {
 
 ```go
 import (
-	"sync"
-	"sync/atomic"
+    "sync"
+    "sync/atomic"
 )
 
 var total uint64
 
 func worker(wg *sync.WaitGroup) {
-	defer wg.Done()
+    defer wg.Done()
 
-	var i uint64
-	for i = 0; i <= 100; i++ {
-		atomic.AddUint64(&total, i)
-	}
+    var i uint64
+    for i = 0; i <= 100; i++ {
+        atomic.AddUint64(&total, i)
+    }
 }
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(2)
+    var wg sync.WaitGroup
+    wg.Add(2)
 
-	go worker(&wg)
-	go worker(&wg)
-	wg.Wait()
+    go worker(&wg)
+    go worker(&wg)
+    wg.Wait()
 }
 ```
 
@@ -92,24 +92,24 @@ func main() {
 type singleton struct {}
 
 var (
-	instance    *singleton
-	initialized uint32
-	mu          sync.Mutex
+    instance    *singleton
+    initialized uint32
+    mu          sync.Mutex
 )
 
 func Instance() *singleton {
-	if atomic.LoadUint32(&initialized) == 1 {
-		return instance
-	}
+    if atomic.LoadUint32(&initialized) == 1 {
+        return instance
+    }
 
-	mu.Lock()
-	defer mu.Unlock()
+    mu.Lock()
+    defer mu.Unlock()
 
-	if instance == nil {
-		defer atomic.StoreUint32(&initialized, 1)
-		instance = &singleton{}
-	}
-	return instance
+    if instance == nil {
+        defer atomic.StoreUint32(&initialized, 1)
+        instance = &singleton{}
+    }
+    return instance
 }
 ```
 
@@ -117,22 +117,22 @@ func Instance() *singleton {
 
 ```go
 type Once struct {
-	m    Mutex
-	done uint32
+    m    Mutex
+    done uint32
 }
 
 func (o *Once) Do(f func()) {
-	if atomic.LoadUint32(&o.done) == 1 {
-		return
-	}
+    if atomic.LoadUint32(&o.done) == 1 {
+        return
+    }
 
-	o.m.Lock()
-	defer o.m.Unlock()
+    o.m.Lock()
+    defer o.m.Unlock()
 
-	if o.done == 0 {
-		defer atomic.StoreUint32(&o.done, 1)
-		f()
-	}
+    if o.done == 0 {
+        defer atomic.StoreUint32(&o.done, 1)
+        f()
+    }
 }
 ```
 
@@ -140,15 +140,15 @@ func (o *Once) Do(f func()) {
 
 ```go
 var (
-	instance *singleton
-	once     sync.Once
+    instance *singleton
+    once     sync.Once
 )
 
 func Instance() *singleton {
-	once.Do(func() {
-		instance = &singleton{}
-	})
-	return instance
+    once.Do(func() {
+        instance = &singleton{}
+    })
+    return instance
 }
 ```
 
@@ -162,20 +162,20 @@ config.Store(loadConfig())
 
 // 启动一个后台线程, 加载更新后的配置信息
 go func() {
-	for {
-		time.Sleep(time.Second)
-		config.Store(loadConfig())
-	}
+    for {
+        time.Sleep(time.Second)
+        config.Store(loadConfig())
+    }
 }()
 
 // 用于处理请求的工作者线程始终采用最新的配置信息
 for i := 0; i < 10; i++ {
-	go func() {
-		for r := range requests() {
-			c := config.Load()
-			// ...
-		}
-	}()
+    go func() {
+        for r := range requests() {
+            c := config.Load()
+            // ...
+        }
+    }()
 }
 ```
 
@@ -190,14 +190,14 @@ var a string
 var done bool
 
 func setup() {
-	a = "hello, world"
-	done = true
+    a = "hello, world"
+    done = true
 }
 
 func main() {
-	go setup()
-	for !done {}
-	print(a)
+    go setup()
+    for !done {}
+    print(a)
 }
 ```
 
@@ -209,10 +209,9 @@ func main() {
 
 因此，如果在一个Goroutine中顺序执行`a = 1; b = 2;`两个语句，虽然在当前的Goroutine中可以认为`a = 1;`语句先于`b = 2;`语句执行，但是在另一个Goroutine中`b = 2;`语句可能会先于`a = 1;`语句执行，甚至在另一个Goroutine中无法看到它们的变化（可能始终在寄存器中）。也就是说在另一个Goroutine看来, `a = 1; b = 2;`两个语句的执行顺序是不确定的。如果一个并发程序无法确定事件的顺序关系，那么程序的运行结果往往会有不确定的结果。比如下面这个程序：
 
-
 ```go
 func main() {
-	go println("你好, 世界")
+    go println("你好, 世界")
 }
 ```
 
@@ -222,14 +221,14 @@ func main() {
 
 ```go
 func main() {
-	done := make(chan int)
+    done := make(chan int)
 
-	go func(){
-		println("你好, 世界")
-		done <- 1
-	}()
+    go func(){
+        println("你好, 世界")
+        done <- 1
+    }()
 
-	<-done
+    <-done
 }
 ```
 
@@ -239,15 +238,15 @@ func main() {
 
 ```go
 func main() {
-	var mu sync.Mutex
+    var mu sync.Mutex
 
-	mu.Lock()
-	go func(){
-		println("你好, 世界")
-		mu.Unlock()
-	}()
+    mu.Lock()
+    go func(){
+        println("你好, 世界")
+        mu.Unlock()
+    }()
 
-	mu.Lock()
+    mu.Lock()
 }
 ```
 
@@ -259,9 +258,9 @@ func main() {
 
 Go程序的初始化和执行总是从`main.main`函数开始的。但是如果`main`包里导入了其它的包，则会按照顺序将它们包含进`main`包里（这里的导入顺序依赖具体实现，一般可能是以文件名或包路径名的字符串顺序导入）。如果某个包被多次导入的话，在执行的时候只会导入一次。当一个包被导入时，如果它还导入了其它的包，则先将其它的包包含进来，然后创建和初始化这个包的常量和变量。然后就是调用包里的`init`函数，如果一个包有多个`init`函数的话，实现可能是以文件名的顺序调用，同一个文件内的多个`init`则是以出现的顺序依次调用（`init`不是普通函数，可以定义有多个，所以不能被其它函数调用）。最终，在`main`包的所有包常量、包变量被创建和初始化，并且`init`函数被执行后，才会进入`main.main`函数，程序开始正常执行。下图是Go程序函数启动顺序的示意图：
 
-![](../images/ch1-12-init.ditaa.png)
+![](../.gitbook/assets/ch1-12-init.ditaa.png)
 
-*图 1-12 包初始化流程*
+_图 1-12 包初始化流程_
 
 要注意的是，在`main.main`函数执行之前所有代码都运行在同一个Goroutine中，也是运行在程序的主系统线程中。如果某个`init`函数内部用go关键字启动了新的Goroutine的话，新的Goroutine和`main.main`函数是并发执行的。
 
@@ -271,17 +270,16 @@ Go程序的初始化和执行总是从`main.main`函数开始的。但是如果`
 
 `go`语句会在当前Goroutine对应函数返回前创建新的Goroutine. 例如:
 
-
 ```go
 var a string
 
 func f() {
-	print(a)
+    print(a)
 }
 
 func hello() {
-	a = "hello, world"
-	go f()
+    a = "hello, world"
+    go f()
 }
 ```
 
@@ -291,20 +289,19 @@ func hello() {
 
 Channel通信是在Goroutine之间进行同步的主要方法。在无缓存的Channel上的每一次发送操作都有与其对应的接收操作相配对，发送和接收操作通常发生在不同的Goroutine上（在同一个Goroutine上执行2个操作很容易导致死锁）。**无缓存的Channel上的发送操作总在对应的接收操作完成前发生.**
 
-
 ```go
 var done = make(chan bool)
 var msg string
 
 func aGoroutine() {
-	msg = "你好, 世界"
-	done <- true
+    msg = "你好, 世界"
+    done <- true
 }
 
 func main() {
-	go aGoroutine()
-	<-done
-	println(msg)
+    go aGoroutine()
+    <-done
+    println(msg)
 }
 ```
 
@@ -317,14 +314,14 @@ var done = make(chan bool)
 var msg string
 
 func aGoroutine() {
-	msg = "你好, 世界"
-	close(done)
+    msg = "你好, 世界"
+    close(done)
 }
 
 func main() {
-	go aGoroutine()
-	<-done
-	println(msg)
+    go aGoroutine()
+    <-done
+    println(msg)
 }
 ```
 
@@ -337,13 +334,13 @@ var done = make(chan bool)
 var msg string
 
 func aGoroutine() {
-	msg = "hello, world"
-	<-done
+    msg = "hello, world"
+    <-done
 }
 func main() {
-	go aGoroutine()
-	done <- true
-	println(msg)
+    go aGoroutine()
+    done <- true
+    println(msg)
 }
 ```
 
@@ -356,22 +353,22 @@ func main() {
 ```go
 var limit = make(chan int, 3)
 var work = []func(){
-	func() { println("1"); time.Sleep(1 * time.Second) },
-	func() { println("2"); time.Sleep(1 * time.Second) },
-	func() { println("3"); time.Sleep(1 * time.Second) },
-	func() { println("4"); time.Sleep(1 * time.Second) },
-	func() { println("5"); time.Sleep(1 * time.Second) },
+    func() { println("1"); time.Sleep(1 * time.Second) },
+    func() { println("2"); time.Sleep(1 * time.Second) },
+    func() { println("3"); time.Sleep(1 * time.Second) },
+    func() { println("4"); time.Sleep(1 * time.Second) },
+    func() { println("5"); time.Sleep(1 * time.Second) },
 }
 
 func main() {
-	for _, w := range work {
-		go func(w func()) {
-			limit <- 1
-			w()
-			<-limit
-		}(w)
-	}
-	select{}
+    for _, w := range work {
+        go func(w func()) {
+            limit <- 1
+            w()
+            <-limit
+        }(w)
+    }
+    select{}
 }
 ```
 
@@ -385,7 +382,7 @@ func main() {
 
 ```go
 func main() {
-	go println("你好, 世界")
+    go println("你好, 世界")
 }
 ```
 
@@ -393,8 +390,8 @@ func main() {
 
 ```go
 func main() {
-	go println("hello, world")
-	time.Sleep(time.Second)
+    go println("hello, world")
+    time.Sleep(time.Second)
 }
 ```
 
@@ -403,3 +400,4 @@ func main() {
 严谨的并发程序的正确性不应该是依赖于CPU的执行速度和休眠时间等不靠谱的因素的。严谨的并发也应该是可以静态推导出结果的：根据线程内顺序一致性，结合Channel或`sync`同步事件的可排序性来推导，最终完成各个线程各段代码的偏序关系排序。如果两个事件无法根据此规则来排序，那么它们就是并发的，也就是执行先后顺序不可靠的。
 
 解决同步问题的思路是相同的：使用显式的同步。
+

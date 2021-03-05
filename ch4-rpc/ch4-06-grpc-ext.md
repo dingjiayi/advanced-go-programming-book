@@ -8,14 +8,14 @@
 
 我们采用第二版的Protobuf语法创建文件：
 
-```protobuf
+```text
 syntax = "proto2";
 
 package main;
 
 message Message {
-	optional string name = 1 [default = "gopher"];
-	optional int32 age = 2 [default = 10];
+    optional string name = 1 [default = "gopher"];
+    optional int32 age = 2 [default = 10];
 }
 ```
 
@@ -23,7 +23,7 @@ message Message {
 
 下面是用proto3语法的扩展特性重新改写上述的proto文件：
 
-```protobuf
+```text
 syntax = "proto3";
 
 package main;
@@ -31,13 +31,13 @@ package main;
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.FieldOptions {
-	string default_string = 50000;
-	int32 default_int = 50001;
+    string default_string = 50000;
+    int32 default_int = 50001;
 }
 
 message Message {
-	string name = 1 [(default_string) = "gopher"];
-	int32 age = 2[(default_int) = 10];
+    string name = 1 [(default_string) = "gopher"];
+    int32 age = 2[(default_int) = 10];
 }
 ```
 
@@ -45,21 +45,21 @@ message Message {
 
 ```go
 var E_DefaultString = &proto.ExtensionDesc{
-	ExtendedType:  (*descriptor.FieldOptions)(nil),
-	ExtensionType: (*string)(nil),
-	Field:         50000,
-	Name:          "main.default_string",
-	Tag:           "bytes,50000,opt,name=default_string,json=defaultString",
-	Filename:      "helloworld.proto",
+    ExtendedType:  (*descriptor.FieldOptions)(nil),
+    ExtensionType: (*string)(nil),
+    Field:         50000,
+    Name:          "main.default_string",
+    Tag:           "bytes,50000,opt,name=default_string,json=defaultString",
+    Filename:      "helloworld.proto",
 }
 
 var E_DefaultInt = &proto.ExtensionDesc{
-	ExtendedType:  (*descriptor.FieldOptions)(nil),
-	ExtensionType: (*int32)(nil),
-	Field:         50001,
-	Name:          "main.default_int",
-	Tag:           "varint,50001,opt,name=default_int,json=defaultInt",
-	Filename:      "helloworld.proto",
+    ExtendedType:  (*descriptor.FieldOptions)(nil),
+    ExtensionType: (*int32)(nil),
+    Field:         50001,
+    Name:          "main.default_int",
+    Tag:           "varint,50001,opt,name=default_int,json=defaultInt",
+    Filename:      "helloworld.proto",
 }
 ```
 
@@ -67,13 +67,13 @@ var E_DefaultInt = &proto.ExtensionDesc{
 
 在开源社区中，github.com/mwitkow/go-proto-validators 已经基于Protobuf的扩展特性实现了功能较为强大的验证器功能。要使用该验证器首先需要下载其提供的代码生成插件：
 
-```
+```text
 $ go get github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
 ```
 
 然后基于go-proto-validators验证器的规则为Message成员增加验证规则：
 
-```protobuf
+```text
 syntax = "proto3";
 
 package main;
@@ -81,12 +81,12 @@ package main;
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 message Message {
-	string important_string = 1 [
-		(validator.field) = {regex: "^[a-z]{2,5}$"}
-	];
-	int32 age = 2 [
-		(validator.field) = {int_gt: 0, int_lt: 100}
-	];
+    string important_string = 1 [
+        (validator.field) = {regex: "^[a-z]{2,5}$"}
+    ];
+    int32 age = 2 [
+        (validator.field) = {int_gt: 0, int_lt: 100}
+    ];
 }
 ```
 
@@ -94,43 +94,42 @@ message Message {
 
 所有的验证规则都由validator.proto文件中的FieldValidator定义：
 
-```protobuf
+```text
 syntax = "proto2";
 package validator;
 
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.FieldOptions {
-	optional FieldValidator field = 65020;
+    optional FieldValidator field = 65020;
 }
 
 message FieldValidator {
-	// Uses a Golang RE2-syntax regex to match the field contents.
-	optional string regex = 1;
-	// Field value of integer strictly greater than this value.
-	optional int64 int_gt = 2;
-	// Field value of integer strictly smaller than this value.
-	optional int64 int_lt = 3;
+    // Uses a Golang RE2-syntax regex to match the field contents.
+    optional string regex = 1;
+    // Field value of integer strictly greater than this value.
+    optional int64 int_gt = 2;
+    // Field value of integer strictly smaller than this value.
+    optional int64 int_lt = 3;
 
-	// ... more ...
+    // ... more ...
 }
 ```
 
-从FieldValidator定义的注释中我们可以看到验证器扩展的一些语法：其中regex表示用于字符串验证的正则表达式，int_gt和int_lt表示数值的范围。
+从FieldValidator定义的注释中我们可以看到验证器扩展的一些语法：其中regex表示用于字符串验证的正则表达式，int\_gt和int\_lt表示数值的范围。
 
 然后采用以下的命令生成验证函数代码：
 
-```
+```text
 protoc  \
-	--proto_path=${GOPATH}/src \
-	--proto_path=${GOPATH}/src/github.com/google/protobuf/src \
-	--proto_path=. \
-	--govalidators_out=. --go_out=plugins=grpc:.\
-	hello.proto
+    --proto_path=${GOPATH}/src \
+    --proto_path=${GOPATH}/src/github.com/google/protobuf/src \
+    --proto_path=. \
+    --govalidators_out=. --go_out=plugins=grpc:.\
+    hello.proto
 ```
 
 > windows:替换 `${GOPATH}` 为 `%GOPATH%` 即可.
-
 
 以上的命令会调用protoc-gen-govalidators程序，生成一个独立的名为hello.validator.pb.go的文件：
 
@@ -138,23 +137,23 @@ protoc  \
 var _regex_Message_ImportantString = regexp.MustCompile("^[a-z]{2,5}$")
 
 func (this *Message) Validate() error {
-	if !_regex_Message_ImportantString.MatchString(this.ImportantString) {
-		return go_proto_validators.FieldError("ImportantString", fmt.Errorf(
-			`value '%v' must be a string conforming to regex "^[a-z]{2,5}$"`,
-			this.ImportantString,
-		))
-	}
-	if !(this.Age > 0) {
-		return go_proto_validators.FieldError("Age", fmt.Errorf(
-			`value '%v' must be greater than '0'`, this.Age,
-		))
-	}
-	if !(this.Age < 100) {
-		return go_proto_validators.FieldError("Age", fmt.Errorf(
-			`value '%v' must be less than '100'`, this.Age,
-		))
-	}
-	return nil
+    if !_regex_Message_ImportantString.MatchString(this.ImportantString) {
+        return go_proto_validators.FieldError("ImportantString", fmt.Errorf(
+            `value '%v' must be a string conforming to regex "^[a-z]{2,5}$"`,
+            this.ImportantString,
+        ))
+    }
+    if !(this.Age > 0) {
+        return go_proto_validators.FieldError("Age", fmt.Errorf(
+            `value '%v' must be greater than '0'`, this.Age,
+        ))
+    }
+    if !(this.Age < 100) {
+        return go_proto_validators.FieldError("Age", fmt.Errorf(
+            `value '%v' must be less than '100'`, this.Age,
+        ))
+    }
+    return nil
 }
 ```
 
@@ -168,15 +167,15 @@ gRPC服务一般用于集群内部通信，如果需要对外暴露服务一般�
 
 grpc-gateway的工作原理如下图：
 
-![](../images/ch4-2-grpc-gateway.png)
+![](../.gitbook/assets/ch4-2-grpc-gateway.png)
 
-*图 4-2 gRPC-Gateway工作流程*
+_图 4-2 gRPC-Gateway工作流程_
 
 通过在Protobuf文件中添加路由相关的元信息，通过自定义的代码插件生成路由相关的处理代码，最终将REST请求转给更后端的gRPC服务处理。
 
 路由扩展元信息也是通过Protobuf的元数据扩展用法提供：
 
-```protobuf
+```text
 syntax = "proto3";
 
 package main;
@@ -188,17 +187,17 @@ message StringMessage {
 }
 
 service RestService {
-	rpc Get(StringMessage) returns (StringMessage) {
-		option (google.api.http) = {
-			get: "/get/{value}"
-		};
-	}
-	rpc Post(StringMessage) returns (StringMessage) {
-		option (google.api.http) = {
-			post: "/post"
-			body: "*"
-		};
-	}
+    rpc Get(StringMessage) returns (StringMessage) {
+        option (google.api.http) = {
+            get: "/get/{value}"
+        };
+    }
+    rpc Post(StringMessage) returns (StringMessage) {
+        option (google.api.http) = {
+            post: "/post"
+            body: "*"
+        };
+    }
 }
 ```
 
@@ -206,18 +205,18 @@ service RestService {
 
 然后通过以下命令安装protoc-gen-grpc-gateway插件：
 
-```
+```text
 go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 ```
 
 再通过插件生成grpc-gateway必须的路由处理代码：
 
-```
+```text
 $ protoc -I/usr/local/include -I. \
-	-I$GOPATH/src \
-	-I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-	--grpc-gateway_out=. --go_out=plugins=grpc:.\
-	hello.proto
+    -I$GOPATH/src \
+    -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+    --grpc-gateway_out=. --go_out=plugins=grpc:.\
+    hello.proto
 ```
 
 > windows:替换 `${GOPATH}` 为 `%GOPATH%` 即可.
@@ -226,10 +225,10 @@ $ protoc -I/usr/local/include -I. \
 
 ```go
 func RegisterRestServiceHandlerFromEndpoint(
-	ctx context.Context, mux *runtime.ServeMux, endpoint string,
-	opts []grpc.DialOption,
+    ctx context.Context, mux *runtime.ServeMux, endpoint string,
+    opts []grpc.DialOption,
 ) (err error) {
-	...
+    ...
 }
 ```
 
@@ -237,49 +236,49 @@ RegisterRestServiceHandlerFromEndpoint函数用于将定义了Rest接口的请�
 
 ```go
 func main() {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+    ctx := context.Background()
+    ctx, cancel := context.WithCancel(ctx)
+    defer cancel()
 
-	mux := runtime.NewServeMux()
+    mux := runtime.NewServeMux()
 
-	err := RegisterRestServiceHandlerFromEndpoint(
-		ctx, mux, "localhost:5000",
-		[]grpc.DialOption{grpc.WithInsecure()},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+    err := RegisterRestServiceHandlerFromEndpoint(
+        ctx, mux, "localhost:5000",
+        []grpc.DialOption{grpc.WithInsecure()},
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	http.ListenAndServe(":8080", mux)
+    http.ListenAndServe(":8080", mux)
 }
 ```
 
 启动grpc服务 ,端口5000
+
 ```go
 type RestServiceImpl struct{}
 
 func (r *RestServiceImpl) Get(ctx context.Context, message *StringMessage) (*StringMessage, error) {
-	return &StringMessage{Value: "Get hi:" + message.Value + "#"}, nil
+    return &StringMessage{Value: "Get hi:" + message.Value + "#"}, nil
 }
 
 func (r *RestServiceImpl) Post(ctx context.Context, message *StringMessage) (*StringMessage, error) {
-	return &StringMessage{Value: "Post hi:" + message.Value + "@"}, nil
+    return &StringMessage{Value: "Post hi:" + message.Value + "@"}, nil
 }
 func main() {
-	grpcServer := grpc.NewServer()
-	RegisterRestServiceServer(grpcServer, new(RestServiceImpl))
-	lis, _ := net.Listen("tcp", ":5000")
-	grpcServer.Serve(lis)
+    grpcServer := grpc.NewServer()
+    RegisterRestServiceServer(grpcServer, new(RestServiceImpl))
+    lis, _ := net.Listen("tcp", ":5000")
+    grpcServer.Serve(lis)
 }
-
 ```
 
-首先通过runtime.NewServeMux()函数创建路由处理器，然后通过RegisterRestServiceHandlerFromEndpoint函数将RestService服务相关的REST接口中转到后面的gRPC服务。grpc-gateway提供的runtime.ServeMux类也实现了http.Handler接口，因此可以和标准库中的相关函数配合使用。
+首先通过runtime.NewServeMux\(\)函数创建路由处理器，然后通过RegisterRestServiceHandlerFromEndpoint函数将RestService服务相关的REST接口中转到后面的gRPC服务。grpc-gateway提供的runtime.ServeMux类也实现了http.Handler接口，因此可以和标准库中的相关函数配合使用。
 
 当gRPC和REST服务全部启动之后，就可以用curl请求REST服务了：
 
-```
+```text
 $ curl localhost:8080/get/gopher
 {"value":"Get: gopher"}
 
@@ -289,7 +288,7 @@ $ curl localhost:8080/post -X POST --data '{"value":"grpc"}'
 
 在对外公布REST接口时，我们一般还会提供一个Swagger格式的文件用于描述这个接口规范。
 
-```
+```text
 $ go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 
 $ protoc -I. \

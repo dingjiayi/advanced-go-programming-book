@@ -12,8 +12,8 @@ Go语言的RPC包的路径为net/rpc，也就是放在了net包目录下面。�
 type HelloService struct {}
 
 func (p *HelloService) Hello(request string, reply *string) error {
-	*reply = "hello:" + request
-	return nil
+    *reply = "hello:" + request
+    return nil
 }
 ```
 
@@ -23,19 +23,19 @@ func (p *HelloService) Hello(request string, reply *string) error {
 
 ```go
 func main() {
-	rpc.RegisterName("HelloService", new(HelloService))
+    rpc.RegisterName("HelloService", new(HelloService))
 
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal("ListenTCP error:", err)
-	}
+    listener, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal("ListenTCP error:", err)
+    }
 
-	conn, err := listener.Accept()
-	if err != nil {
-		log.Fatal("Accept error:", err)
-	}
+    conn, err := listener.Accept()
+    if err != nil {
+        log.Fatal("Accept error:", err)
+    }
 
-	rpc.ServeConn(conn)
+    rpc.ServeConn(conn)
 }
 ```
 
@@ -45,18 +45,18 @@ func main() {
 
 ```go
 func main() {
-	client, err := rpc.Dial("tcp", "localhost:1234")
-	if err != nil {
-		log.Fatal("dialing:", err)
-	}
+    client, err := rpc.Dial("tcp", "localhost:1234")
+    if err != nil {
+        log.Fatal("dialing:", err)
+    }
 
-	var reply string
-	err = client.Call("HelloService.Hello", "hello", &reply)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var reply string
+    err = client.Call("HelloService.Hello", "hello", &reply)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println(reply)
+    fmt.Println(reply)
 }
 ```
 
@@ -74,11 +74,11 @@ func main() {
 const HelloServiceName = "path/to/pkg.HelloService"
 
 type HelloServiceInterface = interface {
-	Hello(request string, reply *string) error
+    Hello(request string, reply *string) error
 }
 
 func RegisterHelloService(svc HelloServiceInterface) error {
-	return rpc.RegisterName(HelloServiceName, svc)
+    return rpc.RegisterName(HelloServiceName, svc)
 }
 ```
 
@@ -88,16 +88,16 @@ func RegisterHelloService(svc HelloServiceInterface) error {
 
 ```go
 func main() {
-	client, err := rpc.Dial("tcp", "localhost:1234")
-	if err != nil {
-		log.Fatal("dialing:", err)
-	}
+    client, err := rpc.Dial("tcp", "localhost:1234")
+    if err != nil {
+        log.Fatal("dialing:", err)
+    }
 
-	var reply string
-	err = client.Call(HelloServiceName+".Hello", "hello", &reply)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var reply string
+    err = client.Call(HelloServiceName+".Hello", "hello", &reply)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -107,21 +107,21 @@ func main() {
 
 ```go
 type HelloServiceClient struct {
-	*rpc.Client
+    *rpc.Client
 }
 
 var _ HelloServiceInterface = (*HelloServiceClient)(nil)
 
 func DialHelloService(network, address string) (*HelloServiceClient, error) {
-	c, err := rpc.Dial(network, address)
-	if err != nil {
-		return nil, err
-	}
-	return &HelloServiceClient{Client: c}, nil
+    c, err := rpc.Dial(network, address)
+    if err != nil {
+        return nil, err
+    }
+    return &HelloServiceClient{Client: c}, nil
 }
 
 func (p *HelloServiceClient) Hello(request string, reply *string) error {
-	return p.Client.Call(HelloServiceName+".Hello", request, reply)
+    return p.Client.Call(HelloServiceName+".Hello", request, reply)
 }
 ```
 
@@ -131,16 +131,16 @@ func (p *HelloServiceClient) Hello(request string, reply *string) error {
 
 ```go
 func main() {
-	client, err := DialHelloService("tcp", "localhost:1234")
-	if err != nil {
-		log.Fatal("dialing:", err)
-	}
+    client, err := DialHelloService("tcp", "localhost:1234")
+    if err != nil {
+        log.Fatal("dialing:", err)
+    }
 
-	var reply string
-	err = client.Hello("hello", &reply)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var reply string
+    err = client.Hello("hello", &reply)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -152,31 +152,30 @@ func main() {
 type HelloService struct {}
 
 func (p *HelloService) Hello(request string, reply *string) error {
-	*reply = "hello:" + request
-	return nil
+    *reply = "hello:" + request
+    return nil
 }
 
 func main() {
-	RegisterHelloService(new(HelloService))
+    RegisterHelloService(new(HelloService))
 
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal("ListenTCP error:", err)
-	}
+    listener, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal("ListenTCP error:", err)
+    }
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Fatal("Accept error:", err)
-		}
+    for {
+        conn, err := listener.Accept()
+        if err != nil {
+            log.Fatal("Accept error:", err)
+        }
 
-		go rpc.ServeConn(conn)
-	}
+        go rpc.ServeConn(conn)
+    }
 }
 ```
 
 在新的RPC服务端实现中，我们用RegisterHelloService函数来注册函数，这样不仅可以避免命名服务名称的工作，同时也保证了传入的服务对象满足了RPC接口的定义。最后我们新的服务改为支持多个TCP链接，然后为每个TCP链接提供RPC服务。
-
 
 ## 4.1.3 跨语言的RPC
 
@@ -188,21 +187,21 @@ Go语言的RPC框架有两个比较有特色的设计：一个是RPC数据打包
 
 ```go
 func main() {
-	rpc.RegisterName("HelloService", new(HelloService))
+    rpc.RegisterName("HelloService", new(HelloService))
 
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal("ListenTCP error:", err)
-	}
+    listener, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal("ListenTCP error:", err)
+    }
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Fatal("Accept error:", err)
-		}
+    for {
+        conn, err := listener.Accept()
+        if err != nil {
+            log.Fatal("Accept error:", err)
+        }
 
-		go rpc.ServeCodec(jsonrpc.NewServerCodec(conn))
-	}
+        go rpc.ServeCodec(jsonrpc.NewServerCodec(conn))
+    }
 }
 ```
 
@@ -212,20 +211,20 @@ func main() {
 
 ```go
 func main() {
-	conn, err := net.Dial("tcp", "localhost:1234")
-	if err != nil {
-		log.Fatal("net.Dial:", err)
-	}
+    conn, err := net.Dial("tcp", "localhost:1234")
+    if err != nil {
+        log.Fatal("net.Dial:", err)
+    }
 
-	client := rpc.NewClientWithCodec(jsonrpc.NewClientCodec(conn))
+    client := rpc.NewClientWithCodec(jsonrpc.NewClientCodec(conn))
 
-	var reply string
-	err = client.Call("HelloService.Hello", "hello", &reply)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var reply string
+    err = client.Call("HelloService.Hello", "hello", &reply)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println(reply)
+    fmt.Println(reply)
 }
 ```
 
@@ -233,7 +232,7 @@ func main() {
 
 在确保客户端可以正常调用RPC服务的方法之后，我们用一个普通的TCP服务代替Go语言版本的RPC服务，这样可以查看客户端调用时发送的数据格式。比如通过nc命令`nc -l 1234`在同样的端口启动一个TCP服务。然后再次执行一次RPC调用将会发现nc输出了以下的信息：
 
-```json
+```javascript
 {"method":"HelloService.Hello","params":["hello"],"id":0}
 ```
 
@@ -243,27 +242,27 @@ func main() {
 
 ```go
 type clientRequest struct {
-	Method string         `json:"method"`
-	Params [1]interface{} `json:"params"`
-	Id     uint64         `json:"id"`
+    Method string         `json:"method"`
+    Params [1]interface{} `json:"params"`
+    Id     uint64         `json:"id"`
 }
 
 type serverRequest struct {
-	Method string           `json:"method"`
-	Params *json.RawMessage `json:"params"`
-	Id     *json.RawMessage `json:"id"`
+    Method string           `json:"method"`
+    Params *json.RawMessage `json:"params"`
+    Id     *json.RawMessage `json:"id"`
 }
 ```
 
 在获取到RPC调用对应的json数据后，我们可以通过直接向架设了RPC服务的TCP服务器发送json数据模拟RPC方法调用：
 
-```
+```text
 $ echo -e '{"method":"HelloService.Hello","params":["hello"],"id":1}' | nc localhost 1234
 ```
 
 返回的结果也是一个json格式的数据：
 
-```json
+```javascript
 {"id":1,"result":"hello:hello","error":null}
 ```
 
@@ -273,15 +272,15 @@ $ echo -e '{"method":"HelloService.Hello","params":["hello"],"id":1}' | nc local
 
 ```go
 type clientResponse struct {
-	Id     uint64           `json:"id"`
-	Result *json.RawMessage `json:"result"`
-	Error  interface{}      `json:"error"`
+    Id     uint64           `json:"id"`
+    Result *json.RawMessage `json:"result"`
+    Error  interface{}      `json:"error"`
 }
 
 type serverResponse struct {
-	Id     *json.RawMessage `json:"id"`
-	Result interface{}      `json:"result"`
-	Error  interface{}      `json:"error"`
+    Id     *json.RawMessage `json:"id"`
+    Result interface{}      `json:"result"`
+    Error  interface{}      `json:"error"`
 }
 ```
 
@@ -295,21 +294,21 @@ Go语言内在的RPC框架已经支持在Http协议上提供RPC服务。但是�
 
 ```go
 func main() {
-	rpc.RegisterName("HelloService", new(HelloService))
+    rpc.RegisterName("HelloService", new(HelloService))
 
-	http.HandleFunc("/jsonrpc", func(w http.ResponseWriter, r *http.Request) {
-		var conn io.ReadWriteCloser = struct {
-			io.Writer
-			io.ReadCloser
-		}{
-			ReadCloser: r.Body,
-			Writer:     w,
-		}
+    http.HandleFunc("/jsonrpc", func(w http.ResponseWriter, r *http.Request) {
+        var conn io.ReadWriteCloser = struct {
+            io.Writer
+            io.ReadCloser
+        }{
+            ReadCloser: r.Body,
+            Writer:     w,
+        }
 
-		rpc.ServeRequest(jsonrpc.NewServerCodec(conn))
-	})
+        rpc.ServeRequest(jsonrpc.NewServerCodec(conn))
+    })
 
-	http.ListenAndServe(":1234", nil)
+    http.ListenAndServe(":1234", nil)
 }
 ```
 
@@ -317,14 +316,14 @@ RPC的服务架设在“/jsonrpc”路径，在处理函数中基于http.Respons
 
 模拟一次RPC调用的过程就是向该链接发送一个json字符串：
 
-```
+```text
 $ curl localhost:1234/jsonrpc -X POST \
-	--data '{"method":"HelloService.Hello","params":["hello"],"id":0}'
+    --data '{"method":"HelloService.Hello","params":["hello"],"id":0}'
 ```
 
 返回的结果依然是json字符串：
 
-```json
+```javascript
 {"id":0,"result":"hello:hello","error":null}
 ```
 

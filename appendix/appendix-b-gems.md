@@ -1,4 +1,4 @@
-# 附录B：有趣的代码片段
+# 附录B: 有趣的代码片段
 
 这里收集一些比较有意思的Go程序片段。
 
@@ -21,7 +21,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("%s%c%s%c\n", q, 0x60, q, 0x60)
+    fmt.Printf("%s%c%s%c\n", q, 0x60, q, 0x60)
 }
 
 var q = `/* Go quine */
@@ -30,7 +30,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("%s%c%s%c\n", q, 0x60, q, 0x60)
+    fmt.Printf("%s%c%s%c\n", q, 0x60, q, 0x60)
 }
 
 var q = `
@@ -52,10 +52,10 @@ package main;func main(){print(c+"\x60"+c+"\x60")};var c=`package main;func main
 
 ```go
 func If(condition bool, trueVal, falseVal interface{}) interface{} {
-	if condition {
-		return trueVal
-	}
-	return falseVal
+    if condition {
+        return trueVal
+    }
+    return falseVal
 }
 
 a, b := 2, 3
@@ -67,15 +67,15 @@ println(max)
 
 ```go
 func main() {
-	defer func() { for {} }()
+    defer func() { for {} }()
 }
 
 func main() {
-	defer func() { select {} }()
+    defer func() { select {} }()
 }
 
 func main() {
-	defer func() { <-make(chan bool) }()
+    defer func() { <-make(chan bool) }()
 }
 ```
 
@@ -85,23 +85,23 @@ func main() {
 
 ```go
 func main() {
-	for i := range random(100) {
-		fmt.Println(i)
-	}
+    for i := range random(100) {
+        fmt.Println(i)
+    }
 }
 
 func random(n int) <-chan int {
-	c := make(chan int)
-	go func() {
-		defer close(c)
-		for i := 0; i < n; i++ {
-			select {
-			case c <- 0:
-			case c <- 1:
-			}
-		}
-	}()
-	return c
+    c := make(chan int)
+    go func() {
+        defer close(c)
+        for i := 0; i < n; i++ {
+            select {
+            case c <- 0:
+            case c <- 1:
+            }
+        }
+    }()
+    return c
 }
 ```
 
@@ -111,41 +111,42 @@ func random(n int) <-chan int {
 
 ```go
 type testing_TBHelper interface {
-	Helper()
+    Helper()
 }
 
 func Assert(tb testing.TB, condition bool, args ...interface{}) {
-	if x, ok := tb.(testing_TBHelper); ok {
-		x.Helper() // Go1.9+
-	}
-	if !condition {
-		if msg := fmt.Sprint(args...); msg != "" {
-			tb.Fatalf("Assert failed, %s", msg)
-		} else {
-			tb.Fatalf("Assert failed")
-		}
-	}
+    if x, ok := tb.(testing_TBHelper); ok {
+        x.Helper() // Go1.9+
+    }
+    if !condition {
+        if msg := fmt.Sprint(args...); msg != "" {
+            tb.Fatalf("Assert failed, %s", msg)
+        } else {
+            tb.Fatalf("Assert failed")
+        }
+    }
 }
 
 func Assertf(tb testing.TB, condition bool, format string, a ...interface{}) {
-	if x, ok := tb.(testing_TBHelper); ok {
-		x.Helper() // Go1.9+
-	}
-	if !condition {
-		if msg := fmt.Sprintf(format, a...); msg != "" {
-			tb.Fatalf("Assertf failed, %s", msg)
-		} else {
-			tb.Fatalf("Assertf failed")
-		}
-	}
+    if x, ok := tb.(testing_TBHelper); ok {
+        x.Helper() // Go1.9+
+    }
+    if !condition {
+        if msg := fmt.Sprintf(format, a...); msg != "" {
+            tb.Fatalf("Assertf failed, %s", msg)
+        } else {
+            tb.Fatalf("Assertf failed")
+        }
+    }
 }
 
 func AssertFunc(tb testing.TB, fn func() error) {
-	if x, ok := tb.(testing_TBHelper); ok {
-		x.Helper() // Go1.9+
-	}
-	if err := fn(); err != nil {
-		tb.Fatalf("AssertFunc failed, %v", err)
-	}
+    if x, ok := tb.(testing_TBHelper); ok {
+        x.Helper() // Go1.9+
+    }
+    if err := fn(); err != nil {
+        tb.Fatalf("AssertFunc failed, %v", err)
+    }
 }
 ```
+

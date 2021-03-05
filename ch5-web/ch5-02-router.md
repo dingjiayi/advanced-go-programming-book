@@ -1,4 +1,4 @@
-# 5.2 router 请求路由
+# 5.2 请求路由
 
 在常见的Web框架中，router是必备的组件。Go语言圈子里router也时常被称为`http`的multiplexer。在上一节中我们通过对Burrow代码的简单学习，已经知道如何用`http`标准库中内置的mux来完成简单的路由功能了。如果开发Web系统对路径中带参数没什么兴趣的话，用`http`标准库中的`mux`就可以。
 
@@ -6,21 +6,21 @@ RESTful是几年前刮起的API设计风潮，在RESTful中除了GET和POST之�
 
 ```go
 const (
-	MethodGet     = "GET"
-	MethodHead    = "HEAD"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodPatch   = "PATCH" // RFC 5789
-	MethodDelete  = "DELETE"
-	MethodConnect = "CONNECT"
-	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
+    MethodGet     = "GET"
+    MethodHead    = "HEAD"
+    MethodPost    = "POST"
+    MethodPut     = "PUT"
+    MethodPatch   = "PATCH" // RFC 5789
+    MethodDelete  = "DELETE"
+    MethodConnect = "CONNECT"
+    MethodOptions = "OPTIONS"
+    MethodTrace   = "TRACE"
 )
 ```
 
 来看看RESTful中常见的请求路径：
 
-```shell
+```text
 GET /repos/:owner/:repo/comments/:id/reactions
 
 POST /projects/:project_id/columns
@@ -40,7 +40,7 @@ DELETE /user/starred/:owner/:repo
 
 因为httprouter中使用的是显式匹配，所以在设计路由的时候需要规避一些会导致路由冲突的情况，例如：
 
-```
+```text
 conflict:
 GET /user/info/:name
 GET /user/:id
@@ -50,9 +50,9 @@ GET /user/info/:name
 POST /user/:id
 ```
 
-简单来讲的话，如果两个路由拥有一致的http方法(指 GET/POST/PUT/DELETE)和请求路径前缀，且在某个位置出现了A路由是wildcard（指:id这种形式）参数，B路由则是普通字符串，那么就会发生路由冲突。路由冲突会在初始化阶段直接panic：
+简单来讲的话，如果两个路由拥有一致的http方法\(指 GET/POST/PUT/DELETE\)和请求路径前缀，且在某个位置出现了A路由是wildcard（指:id这种形式）参数，B路由则是普通字符串，那么就会发生路由冲突。路由冲突会在初始化阶段直接panic：
 
-```shell
+```text
 panic: wildcard route ':id' conflicts with existing children in path '/user/:id'
 
 goroutine 1 [running]:
@@ -73,7 +73,7 @@ exit status 2
 
 除支持路径中的wildcard参数之外，httprouter还可以支持`*`号来进行通配，不过`*`号开头的参数只能放在路由的结尾，例如下面这样：
 
-```shell
+```text
 Pattern: /src/*filepath
 
  /src/                     filepath = ""
@@ -88,16 +88,17 @@ Pattern: /src/*filepath
 ```go
 r := httprouter.New()
 r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("oh no, not found"))
+    w.Write([]byte("oh no, not found"))
 })
 ```
 
 或者内部panic的时候：
+
 ```go
 r.PanicHandler = func(w http.ResponseWriter, r *http.Request, c interface{}) {
-	log.Printf("Recovering from panic, Reason: %#v", c.(error))
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(c.(error).Error()))
+    log.Printf("Recovering from panic, Reason: %#v", c.(error))
+    w.WriteHeader(http.StatusInternalServerError)
+    w.Write([]byte(c.(error).Error()))
 }
 ```
 
@@ -105,19 +106,19 @@ r.PanicHandler = func(w http.ResponseWriter, r *http.Request, c interface{}) {
 
 ## 5.2.2 原理
 
-httprouter和众多衍生router使用的数据结构被称为压缩字典树（Radix Tree）。读者可能没有接触过压缩字典树，但对字典树（Trie Tree）应该有所耳闻。*图 5-1*是一个典型的字典树结构：
+httprouter和众多衍生router使用的数据结构被称为压缩字典树（Radix Tree）。读者可能没有接触过压缩字典树，但对字典树（Trie Tree）应该有所耳闻。_图 5-1_是一个典型的字典树结构：
 
-![trie tree](../images/ch6-02-trie.png)
+![trie tree](../.gitbook/assets/ch6-02-trie.png)
 
-*图 5-1 字典树*
+_图 5-1 字典树_
 
 字典树常用来进行字符串检索，例如用给定的字符串序列建立字典树。对于目标字符串，只要从根节点开始深度优先搜索，即可判断出该字符串是否曾经出现过，时间复杂度为`O(n)`，n可以认为是目标字符串的长度。为什么要这样做？字符串本身不像数值类型可以进行数值比较，两个字符串对比的时间复杂度取决于字符串长度。如果不用字典树来完成上述功能，要对历史字符串进行排序，再利用二分查找之类的算法去搜索，时间复杂度只高不低。可认为字典树是一种空间换时间的典型做法。
 
 普通的字典树有一个比较明显的缺点，就是每个字母都需要建立一个孩子节点，这样会导致字典树的层数比较深，压缩字典树相对好地平衡了字典树的优点和缺点。是典型的压缩字典树结构：
 
-![radix tree](../images/ch6-02-radix.png)
+![radix tree](../.gitbook/assets/ch6-02-radix.png)
 
-*图 5-2 压缩字典树*
+_图 5-2 压缩字典树_
 
 每个节点上不只存储一个字母了，这也是压缩字典树中“压缩”的主要含义。使用压缩字典树可以减少树的层数，同时因为每个节点上数据存储也比通常的字典树要多，所以程序的局部性较好（一个节点的path加载到cache即可进行多个字符的对比），从而对CPU缓存友好。
 
@@ -125,7 +126,7 @@ httprouter和众多衍生router使用的数据结构被称为压缩字典树（R
 
 我们来跟踪一下httprouter中，一个典型的压缩字典树的创建过程，路由设定如下：
 
-```
+```text
 PUT /user/installations/:installation_id/repositories/:repository_id
 
 GET /marketplace_listing/plans/
@@ -147,15 +148,15 @@ httprouter的Router结构体中存储压缩字典树使用的是下述数据结�
 ```go
 // 略去了其它部分的 Router struct
 type Router struct {
-	// ...
-	trees map[string]*node
-	// ...
+    // ...
+    trees map[string]*node
+    // ...
 }
 ```
 
 `trees`中的`key`即为HTTP 1.1的RFC中定义的各种方法，具体有：
 
-```shell
+```text
 GET
 HEAD
 OPTIONS
@@ -176,13 +177,13 @@ r.PUT("/user/installations/:installation_id/repositories/:reposit", Hello)
 
 这样`PUT`对应的根节点就会被创建出来。把这棵`PUT`的树画出来：
 
-![put radix tree](../images/ch6-02-radix-put.png)
+![put radix tree](../.gitbook/assets/ch6-02-radix-put.png)
 
-*图 5-3 插入路由之后的压缩字典树*
+_图 5-3 插入路由之后的压缩字典树_
 
 radix的节点类型为`*httprouter.node`，为了说明方便，我们留下了目前关心的几个字段：
 
-```
+```text
 path: 当前节点对应的路径中的字符串
 
 wildChild: 子节点是否为参数节点，即 wildcard node，或者说 :id 这种类型的节点
@@ -194,26 +195,25 @@ nType: 当前节点类型，有四个枚举值: 分别为 static/root/param/catc
     catchAll                 // 通配符节点，例如 *anyway
 
 indices：子节点索引，当子节点为非参数类型，即本节点的wildChild为false时，会将每个子节点的首字母放在该索引数组。说是数组，实际上是个string。
-
 ```
 
 当然，`PUT`路由只有唯一的一条路径。接下来，我们以后续的多条GET路径为例，讲解子节点的插入过程。
 
 ### 5.2.3.2 子节点插入
 
-当插入`GET /marketplace_listing/plans`时，类似前面PUT的过程，GET树的结构如*图 5-4*：
+当插入`GET /marketplace_listing/plans`时，类似前面PUT的过程，GET树的结构如_图 5-4_：
 
-![get radix step 1](../images/ch6-02-radix-get-1.png)
+![get radix step 1](../.gitbook/assets/ch6-02-radix-get-1.png)
 
-*图 5-4 插入第一个节点的压缩字典树*
+_图 5-4 插入第一个节点的压缩字典树_
 
 因为第一个路由没有参数，path都被存储到根节点上了。所以只有一个节点。
 
-然后插入`GET /marketplace_listing/plans/:id/accounts`，新的路径与之前的路径有共同的前缀，且可以直接在之前叶子节点后进行插入，那么结果也很简单，插入后的树结构见*图 5-5*:
+然后插入`GET /marketplace_listing/plans/:id/accounts`，新的路径与之前的路径有共同的前缀，且可以直接在之前叶子节点后进行插入，那么结果也很简单，插入后的树结构见_图 5-5_:
 
-![get radix step 2](../images/ch6-02-radix-get-2.png)
+![get radix step 2](../.gitbook/assets/ch6-02-radix-get-2.png)
 
-*图 5-5 插入第二个节点的压缩字典树*
+_图 5-5 插入第二个节点的压缩字典树_
 
 由于`:id`这个节点只有一个字符串的普通子节点，所以indices还依然不需要处理。
 
@@ -221,19 +221,19 @@ indices：子节点索引，当子节点为非参数类型，即本节点的wild
 
 ### 5.2.3.3 边分裂
 
-接下来我们插入`GET /search`，这时会导致树的边分裂，见*图 5-6*。
+接下来我们插入`GET /search`，这时会导致树的边分裂，见_图 5-6_。
 
-![get radix step 3](../images/ch6-02-radix-get-3.png)
+![get radix step 3](../.gitbook/assets/ch6-02-radix-get-3.png)
 
-*图 5-6 插入第三个节点，导致边分裂*
+_图 5-6 插入第三个节点，导致边分裂_
 
 原有路径和新的路径在初始的`/`位置发生分裂，这样需要把原有的root节点内容下移，再将新路由 `search`同样作为子节点挂在root节点之下。这时候因为子节点出现多个，root节点的indices提供子节点索引，这时候该字段就需要派上用场了。"ms"代表子节点的首字母分别为m（marketplace）和s（search）。
 
-我们一口作气，把`GET /status`和`GET /support`也插入到树中。这时候会导致在`search`节点上再次发生分裂，最终结果见*图 5-7*：
+我们一口作气，把`GET /status`和`GET /support`也插入到树中。这时候会导致在`search`节点上再次发生分裂，最终结果见_图 5-7_：
 
-![get radix step 4](../images/ch6-02-radix-get-4.png)
+![get radix step 4](../.gitbook/assets/ch6-02-radix-get-4.png)
 
-*图 5-7 插入所有路由后的压缩字典树*
+_图 5-7 插入所有路由后的压缩字典树_
 
 ### 5.2.3.4 子节点冲突处理
 
@@ -248,3 +248,4 @@ indices：子节点索引，当子节点为非参数类型，即本节点的wild
 5. 在插入static节点时，父节点的children非空，且子节点nType为catchAll。
 
 只要发生冲突，都会在初始化的时候panic。例如，在插入我们臆想的路由`GET /marketplace_listing/plans/ohyes`时，出现第4种冲突情况：它的父节点`marketplace_listing/plans/`的wildChild字段为true。
+

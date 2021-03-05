@@ -14,56 +14,56 @@
 package main
 
 import (
-	"fmt"
-	"regexp"
-	"time"
+    "fmt"
+    "regexp"
+    "time"
 
-	"github.com/gocolly/colly"
+    "github.com/gocolly/colly"
 )
 
 var visited = map[string]bool{}
 
 func main() {
-	// Instantiate default collector
-	c := colly.NewCollector(
-		colly.AllowedDomains("www.abcdefg.com"),
-		colly.MaxDepth(1),
-	)
+    // Instantiate default collector
+    c := colly.NewCollector(
+        colly.AllowedDomains("www.abcdefg.com"),
+        colly.MaxDepth(1),
+    )
 
-	// 我们认为匹配该模式的是该网站的详情页
-	detailRegex, _ := regexp.Compile(`/go/go\?p=\d+$`)
-	// 匹配下面模式的是该网站的列表页
-	listRegex, _ := regexp.Compile(`/t/\d+#\w+`)
+    // 我们认为匹配该模式的是该网站的详情页
+    detailRegex, _ := regexp.Compile(`/go/go\?p=\d+$`)
+    // 匹配下面模式的是该网站的列表页
+    listRegex, _ := regexp.Compile(`/t/\d+#\w+`)
 
-	// 所有a标签，上设置回调函数
-	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		link := e.Attr("href")
+    // 所有a标签，上设置回调函数
+    c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+        link := e.Attr("href")
 
-		// 已访问过的详情页或列表页，跳过
-		if visited[link] && (detailRegex.Match([]byte(link)) || listRegex.Match([]byte(link))) {
-			return
-		}
+        // 已访问过的详情页或列表页，跳过
+        if visited[link] && (detailRegex.Match([]byte(link)) || listRegex.Match([]byte(link))) {
+            return
+        }
 
-		// 既不是列表页，也不是详情页
-		// 那么不是我们关心的内容，要跳过
-		if !detailRegex.Match([]byte(link)) && !listRegex.Match([]byte(link)) {
-			println("not match", link)
-			return
-		}
+        // 既不是列表页，也不是详情页
+        // 那么不是我们关心的内容，要跳过
+        if !detailRegex.Match([]byte(link)) && !listRegex.Match([]byte(link)) {
+            println("not match", link)
+            return
+        }
 
-		// 因为大多数网站有反爬虫策略
-		// 所以爬虫逻辑中应该有 sleep 逻辑以避免被封杀
-		time.Sleep(time.Second)
-		println("match", link)
+        // 因为大多数网站有反爬虫策略
+        // 所以爬虫逻辑中应该有 sleep 逻辑以避免被封杀
+        time.Sleep(time.Second)
+        println("match", link)
 
-		visited[link] = true
+        visited[link] = true
 
-		time.Sleep(time.Millisecond * 2)
-		c.Visit(e.Request.AbsoluteURL(link))
-	})
+        time.Sleep(time.Millisecond * 2)
+        c.Visit(e.Request.AbsoluteURL(link))
+    })
 
-	err := c.Visit("https://www.abcdefg.com/go/go")
-	if err != nil {fmt.Println(err)}
+    err := c.Visit("https://www.abcdefg.com/go/go")
+    if err != nil {fmt.Println(err)}
 }
 ```
 
@@ -76,9 +76,9 @@ func main() {
 
 所以我们需要分布式爬虫。从本质上来讲，分布式爬虫是一套任务分发和执行系统。而常见的任务分发，因为上下游存在速度不匹配问题，必然要借助消息队列。
 
-![dist-crawler](../images/ch6-dist-crawler.png)
+![dist-crawler](../.gitbook/assets/ch6-dist-crawler.png)
 
-*图 6-14 爬虫工作流程*
+_图 6-14 爬虫工作流程_
 
 上游的主要工作是根据预先配置好的起点来爬取所有的目标“列表页”，列表页的html内容中会包含有所有详情页的链接。详情页的数量一般是列表页的10到100倍，所以我们将这些详情页链接作为“任务”内容，通过消息队列分发出去。
 
@@ -94,15 +94,15 @@ nats的服务端项目是gnatsd，客户端与gnatsd的通信方式为基于tcp�
 
 向subject为task发消息：
 
-![nats-protocol-pub](../images/ch6-09-nats-protocol-pub.png)
+![nats-protocol-pub](../.gitbook/assets/ch6-09-nats-protocol-pub.png)
 
-*图 6-15 nats协议中的pub*
+_图 6-15 nats协议中的pub_
 
 以workers的queue从tasks subject订阅消息：
 
-![nats-protocol-sub](../images/ch6-09-nats-protocol-sub.png)
+![nats-protocol-sub](../.gitbook/assets/ch6-09-nats-protocol-sub.png)
 
-*图 6-16 nats协议中的sub*
+_图 6-16 nats协议中的sub_
 
 其中的queue参数是可选的，如果希望在分布式的消费端进行任务的负载均衡，而不是所有人都收到同样的消息，那么就要给消费端指定相同的queue名字。
 
@@ -138,10 +138,10 @@ if err != nil {return}
 
 var msg *nats.Msg
 for {
-	msg, err = sub.NextMsg(time.Hour * 10000)
-	if err != nil {break}
-	// 正确地消费到了消息
-	// 可用 nats.Msg 对象处理任务
+    msg, err = sub.NextMsg(time.Hour * 10000)
+    if err != nil {break}
+    // 正确地消费到了消息
+    // 可用 nats.Msg 对象处理任务
 }
 ```
 
@@ -153,10 +153,10 @@ for {
 package main
 
 import (
-	"fmt"
-	"net/url"
+    "fmt"
+    "net/url"
 
-	"github.com/gocolly/colly"
+    "github.com/gocolly/colly"
 )
 
 var domain2Collector = map[string]*colly.Collector{}
@@ -165,81 +165,80 @@ var maxDepth = 10
 var natsURL = "nats://localhost:4222"
 
 func factory(urlStr string) *colly.Collector {
-	u, _ := url.Parse(urlStr)
-	return domain2Collector[u.Host]
+    u, _ := url.Parse(urlStr)
+    return domain2Collector[u.Host]
 }
 
 func initABCDECollector() *colly.Collector {
-	c := colly.NewCollector(
-		colly.AllowedDomains("www.abcdefg.com"),
-		colly.MaxDepth(maxDepth),
-	)
+    c := colly.NewCollector(
+        colly.AllowedDomains("www.abcdefg.com"),
+        colly.MaxDepth(maxDepth),
+    )
 
-	c.OnResponse(func(resp *colly.Response) {
-		// 做一些爬完之后的善后工作
-		// 比如页面已爬完的确认存进 MySQL
-	})
+    c.OnResponse(func(resp *colly.Response) {
+        // 做一些爬完之后的善后工作
+        // 比如页面已爬完的确认存进 MySQL
+    })
 
-	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		// 基本的反爬虫策略
-		link := e.Attr("href")
-		time.Sleep(time.Second * 2)
+    c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+        // 基本的反爬虫策略
+        link := e.Attr("href")
+        time.Sleep(time.Second * 2)
 
-		// 正则 match 列表页的话，就 visit
-		if listRegex.Match([]byte(link)) {
-			c.Visit(e.Request.AbsoluteURL(link))
-		}
-		// 正则 match 落地页的话，就发消息队列
-		if detailRegex.Match([]byte(link)) {
-			err = nc.Publish("tasks", []byte(link))
-			nc.Flush()
-		}
-	})
-	return c
+        // 正则 match 列表页的话，就 visit
+        if listRegex.Match([]byte(link)) {
+            c.Visit(e.Request.AbsoluteURL(link))
+        }
+        // 正则 match 落地页的话，就发消息队列
+        if detailRegex.Match([]byte(link)) {
+            err = nc.Publish("tasks", []byte(link))
+            nc.Flush()
+        }
+    })
+    return c
 }
 
 func initHIJKLCollector() *colly.Collector {
-	c := colly.NewCollector(
-		colly.AllowedDomains("www.hijklmn.com"),
-		colly.MaxDepth(maxDepth),
-	)
+    c := colly.NewCollector(
+        colly.AllowedDomains("www.hijklmn.com"),
+        colly.MaxDepth(maxDepth),
+    )
 
-	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-	})
+    c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+    })
 
-	return c
+    return c
 }
 
 func init() {
-	domain2Collector["www.abcdefg.com"] = initABCDECollector()
-	domain2Collector["www.hijklmn.com"] = initHIJKLCollector()
-	var err error
-	nc, err = nats.Connect(natsURL)
-	if err != nil {os.Exit(1)}
+    domain2Collector["www.abcdefg.com"] = initABCDECollector()
+    domain2Collector["www.hijklmn.com"] = initHIJKLCollector()
+    var err error
+    nc, err = nats.Connect(natsURL)
+    if err != nil {os.Exit(1)}
 }
 
 func main() {
-	urls := []string{"https://www.abcdefg.com", "https://www.hijklmn.com"}
-	for _, url := range urls {
-		instance := factory(url)
-		instance.Visit(url)
-	}
+    urls := []string{"https://www.abcdefg.com", "https://www.hijklmn.com"}
+    for _, url := range urls {
+        instance := factory(url)
+        instance.Visit(url)
+    }
 }
-
 ```
 
 ## 6.7.4 结合colly的消息消费
 
-消费端就简单一些了，我们只需要订阅对应的主题，并直接访问网站的详情页(落地页)即可。
+消费端就简单一些了，我们只需要订阅对应的主题，并直接访问网站的详情页\(落地页\)即可。
 
 ```go
 package main
 
 import (
-	"fmt"
-	"net/url"
+    "fmt"
+    "net/url"
 
-	"github.com/gocolly/colly"
+    "github.com/gocolly/colly"
 )
 
 var domain2Collector = map[string]*colly.Collector{}
@@ -248,62 +247,63 @@ var maxDepth = 10
 var natsURL = "nats://localhost:4222"
 
 func factory(urlStr string) *colly.Collector {
-	u, _ := url.Parse(urlStr)
-	return domain2Collector[u.Host]
+    u, _ := url.Parse(urlStr)
+    return domain2Collector[u.Host]
 }
 
 func initV2exCollector() *colly.Collector {
-	c := colly.NewCollector(
-		colly.AllowedDomains("www.abcdefg.com"),
-		colly.MaxDepth(maxDepth),
-	)
-	return c
+    c := colly.NewCollector(
+        colly.AllowedDomains("www.abcdefg.com"),
+        colly.MaxDepth(maxDepth),
+    )
+    return c
 }
 
 func initV2fxCollector() *colly.Collector {
-	c := colly.NewCollector(
-		colly.AllowedDomains("www.hijklmn.com"),
-		colly.MaxDepth(maxDepth),
-	)
-	return c
+    c := colly.NewCollector(
+        colly.AllowedDomains("www.hijklmn.com"),
+        colly.MaxDepth(maxDepth),
+    )
+    return c
 }
 
 func init() {
-	domain2Collector["www.abcdefg.com"] = initV2exCollector()
-	domain2Collector["www.hijklmn.com"] = initV2fxCollector()
+    domain2Collector["www.abcdefg.com"] = initV2exCollector()
+    domain2Collector["www.hijklmn.com"] = initV2fxCollector()
 
-	var err error
-	nc, err = nats.Connect(natsURL)
-	if err != nil {os.Exit(1)}
+    var err error
+    nc, err = nats.Connect(natsURL)
+    if err != nil {os.Exit(1)}
 }
 
 func startConsumer() {
-	nc, err := nats.Connect(nats.DefaultURL)
-	if err != nil {return}
+    nc, err := nats.Connect(nats.DefaultURL)
+    if err != nil {return}
 
-	sub, err := nc.QueueSubscribeSync("tasks", "workers")
-	if err != nil {return}
+    sub, err := nc.QueueSubscribeSync("tasks", "workers")
+    if err != nil {return}
 
-	var msg *nats.Msg
-	for {
-		msg, err = sub.NextMsg(time.Hour * 10000)
-		if err != nil {break}
+    var msg *nats.Msg
+    for {
+        msg, err = sub.NextMsg(time.Hour * 10000)
+        if err != nil {break}
 
-		urlStr := string(msg.Data)
-		ins := factory(urlStr)
-		// 因为最下游拿到的一定是对应网站的落地页
-		// 所以不用进行多余的判断了，直接爬内容即可
-		ins.Visit(urlStr)
-		// 防止被封杀
-		time.Sleep(time.Second)
-	}
+        urlStr := string(msg.Data)
+        ins := factory(urlStr)
+        // 因为最下游拿到的一定是对应网站的落地页
+        // 所以不用进行多余的判断了，直接爬内容即可
+        ins.Visit(urlStr)
+        // 防止被封杀
+        time.Sleep(time.Second)
+    }
 }
 
 func main() {
-	startConsumer()
+    startConsumer()
 }
 ```
 
 从代码层面上来讲，这里的生产者和消费者其实本质上差不多。如果日后我们要灵活地支持增加、减少各种网站的爬取的话，应该思考如何将这些爬虫的策略、参数尽量地配置化。
 
 在本章的分布式配置一节中已经讲了一些配置系统的使用，读者可以自行进行尝试，这里就不再赘述了。
+

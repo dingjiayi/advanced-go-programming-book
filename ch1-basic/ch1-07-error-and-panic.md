@@ -8,7 +8,7 @@
 
 ```go
 if v, ok := m["key"]; ok {
-	return v
+    return v
 }
 ```
 
@@ -19,7 +19,7 @@ if v, ok := m["key"]; ok {
 ```go
 err := syscall.Chmod(":invalid path:", 0666)
 if err != nil {
-	log.Fatal(err.(syscall.Errno))
+    log.Fatal(err.(syscall.Errno))
 }
 ```
 
@@ -31,13 +31,13 @@ if err != nil {
 
 ```go
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Fatal(r)
-		}
-	}()
+    defer func() {
+        if r := recover(); r != nil {
+            log.Fatal(r)
+        }
+    }()
 
-	...
+    ...
 }
 ```
 
@@ -49,20 +49,20 @@ func main() {
 
 ```go
 func CopyFile(dstName, srcName string) (written int64, err error) {
-	src, err := os.Open(srcName)
-	if err != nil {
-		return
-	}
+    src, err := os.Open(srcName)
+    if err != nil {
+        return
+    }
 
-	dst, err := os.Create(dstName)
-	if err != nil {
-		return
-	}
+    dst, err := os.Create(dstName)
+    if err != nil {
+        return
+    }
 
-	written, err = io.Copy(dst, src)
-	dst.Close()
-	src.Close()
-	return
+    written, err = io.Copy(dst, src)
+    dst.Close()
+    src.Close()
+    return
 }
 ```
 
@@ -70,19 +70,19 @@ func CopyFile(dstName, srcName string) (written int64, err error) {
 
 ```go
 func CopyFile(dstName, srcName string) (written int64, err error) {
-	src, err := os.Open(srcName)
-	if err != nil {
-		return
-	}
-	defer src.Close()
+    src, err := os.Open(srcName)
+    if err != nil {
+        return
+    }
+    defer src.Close()
 
-	dst, err := os.Create(dstName)
-	if err != nil {
-		return
-	}
-	defer dst.Close()
+    dst, err := os.Create(dstName)
+    if err != nil {
+        return
+    }
+    defer dst.Close()
 
-	return io.Copy(dst, src)
+    return io.Copy(dst, src)
 }
 ```
 
@@ -94,12 +94,12 @@ func CopyFile(dstName, srcName string) (written int64, err error) {
 
 ```go
 func ParseJSON(input string) (s *Syntax, err error) {
-	defer func() {
-		if p := recover(); p != nil {
-			err = fmt.Errorf("JSON: internal error: %v", p)
-		}
-	}()
-	// ...parser...
+    defer func() {
+        if p := recover(); p != nil {
+            err = fmt.Errorf("JSON: internal error: %v", p)
+        }
+    }()
+    // ...parser...
 }
 ```
 
@@ -113,7 +113,7 @@ Go语言库的实现习惯: 即使在包内部使用了`panic`，但是在导出
 
 ```go
 if _, err := html.Parse(resp.Body); err != nil {
-	return nil, fmt.Errorf("parsing %s as HTML: %v", url,err)
+    return nil, fmt.Errorf("parsing %s as HTML: %v", url,err)
 }
 ```
 
@@ -124,20 +124,19 @@ if _, err := html.Parse(resp.Body); err != nil {
 为此，我们可以定义自己的`github.com/chai2010/errors`包，里面是以下的错误类型：
 
 ```go
-
 type Error interface {
-	Caller() []CallerInfo
-	Wraped() []error
-	Code() int
-	error
+    Caller() []CallerInfo
+    Wraped() []error
+    Code() int
+    error
 
-	private()
+    private()
 }
 
 type CallerInfo struct {
-	FuncName string
-	FileName string
-	FileLine int
+    FuncName string
+    FileName string
+    FileLine int
 }
 ```
 
@@ -160,50 +159,50 @@ func ToJson(err error) string
 
 ```go
 import (
-	"github.com/chai2010/errors"
+    "github.com/chai2010/errors"
 )
 
 func loadConfig() error {
-	_, err := ioutil.ReadFile("/path/to/file")
-	if err != nil {
-		return errors.Wrap(err, "read failed")
-	}
+    _, err := ioutil.ReadFile("/path/to/file")
+    if err != nil {
+        return errors.Wrap(err, "read failed")
+    }
 
-	// ...
+    // ...
 }
 
 func setup() error {
-	err := loadConfig()
-	if err != nil {
-		return errors.Wrap(err, "invalid config")
-	}
+    err := loadConfig()
+    if err != nil {
+        return errors.Wrap(err, "invalid config")
+    }
 
-	// ...
+    // ...
 }
 
 func main() {
-	if err := setup(); err != nil {
-		log.Fatal(err)
-	}
+    if err := setup(); err != nil {
+        log.Fatal(err)
+    }
 
-	// ...
+    // ...
 }
 ```
 
 上面的例子中，错误被进行了2层包装。我们可以这样遍历原始错误经历了哪些包装流程：
 
 ```go
-	for i, e := range err.(errors.Error).Wraped() {
-		fmt.Printf("wrapped(%d): %v\n", i, e)
-	}
+    for i, e := range err.(errors.Error).Wraped() {
+        fmt.Printf("wrapped(%d): %v\n", i, e)
+    }
 ```
 
 同时也可以获取每个包装错误的函数调用堆栈信息：
 
 ```go
-	for i, x := range err.(errors.Error).Caller() {
-		fmt.Printf("caller:%d: %s\n", i, x.FuncName)
-	}
+    for i, x := range err.(errors.Error).Caller() {
+        fmt.Printf("caller:%d: %s\n", i, x.FuncName)
+    }
 ```
 
 如果需要将错误通过网络传输，可以用`errors.ToJson(err)`编码为JSON字符串：
@@ -211,16 +210,16 @@ func main() {
 ```go
 // 以JSON字符串方式发送错误
 func sendError(ch chan<- string, err error) {
-	ch <- errors.ToJson(err)
+    ch <- errors.ToJson(err)
 }
 
 // 接收JSON字符串格式的错误
 func recvError(ch <-chan string) error {
-	p, err := errors.FromJson(<-ch)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return p
+    p, err := errors.FromJson(<-ch)
+    if err != nil {
+        log.Fatal(err)
+    }
+    return p
 }
 ```
 
@@ -238,14 +237,13 @@ fmt.Println(err.(errors.Error).Code())
 ```go
 f, err := os.Open("filename.ext")
 if err != nil {
-	// 失败的情形, 马上返回错误
+    // 失败的情形, 马上返回错误
 }
 
 // 正常的处理流程
 ```
 
 Go语言中大部分函数的代码结构几乎相同，首先是一系列的初始检查，用于防止错误发生，之后是函数的实际逻辑。
-
 
 ## 1.7.3 错误的错误返回
 
@@ -255,11 +253,11 @@ Go语言中的错误是一种接口类型。接口信息中包含了原始类型
 
 ```go
 func returnsError() error {
-	var p *MyError = nil
-	if bad() {
-		p = ErrBad
-	}
-	return p // Will always return a non-nil error.
+    var p *MyError = nil
+    if bad() {
+        p = ErrBad
+    }
+    return p // Will always return a non-nil error.
 }
 ```
 
@@ -267,10 +265,10 @@ func returnsError() error {
 
 ```go
 func returnsError() error {
-	if bad() {
-		return (*MyError)(err)
-	}
-	return nil
+    if bad() {
+        return (*MyError)(err)
+    }
+    return nil
 }
 ```
 
@@ -293,15 +291,15 @@ Go语言函数调用的正常流程是函数执行返回语句返回结果，在
 
 ```go
 func main() {
-	if r := recover(); r != nil {
-		log.Fatal(r)
-	}
+    if r := recover(); r != nil {
+        log.Fatal(r)
+    }
 
-	panic(123)
+    panic(123)
 
-	if r := recover(); r != nil {
-		log.Fatal(r)
-	}
+    if r := recover(); r != nil {
+        log.Fatal(r)
+    }
 }
 ```
 
@@ -311,18 +309,18 @@ func main() {
 
 ```go
 func main() {
-	defer func() {
-		// 无法捕获异常
-		if r := MyRecover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	panic(1)
+    defer func() {
+        // 无法捕获异常
+        if r := MyRecover(); r != nil {
+            fmt.Println(r)
+        }
+    }()
+    panic(1)
 }
 
 func MyRecover() interface{} {
-	log.Println("trace...")
-	return recover()
+    log.Println("trace...")
+    return recover()
 }
 ```
 
@@ -330,15 +328,15 @@ func MyRecover() interface{} {
 
 ```go
 func main() {
-	defer func() {
-		defer func() {
-			// 无法捕获异常
-			if r := recover(); r != nil {
-				fmt.Println(r)
-			}
-		}()
-	}()
-	panic(1)
+    defer func() {
+        defer func() {
+            // 无法捕获异常
+            if r := recover(); r != nil {
+                fmt.Println(r)
+            }
+        }()
+    }()
+    panic(1)
 }
 ```
 
@@ -348,13 +346,13 @@ func main() {
 
 ```go
 func MyRecover() interface{} {
-	return recover()
+    return recover()
 }
 
 func main() {
-	// 可以正常捕获异常
-	defer MyRecover()
-	panic(1)
+    // 可以正常捕获异常
+    defer MyRecover()
+    panic(1)
 }
 ```
 
@@ -362,9 +360,9 @@ func main() {
 
 ```go
 func main() {
-	// 无法捕获异常
-	defer recover()
-	panic(1)
+    // 无法捕获异常
+    defer recover()
+    panic(1)
 }
 ```
 
@@ -374,13 +372,13 @@ func main() {
 
 ```go
 func main() {
-	defer func() {
-		if r := recover(); r != nil { ... }
-		// 虽然总是返回nil, 但是可以恢复异常状态
-	}()
+    defer func() {
+        if r := recover(); r != nil { ... }
+        // 虽然总是返回nil, 但是可以恢复异常状态
+    }()
 
-	// 警告: 用`nil`为参数抛出异常
-	panic(nil)
+    // 警告: 用`nil`为参数抛出异常
+    panic(nil)
 }
 ```
 
@@ -388,20 +386,20 @@ func main() {
 
 ```go
 func foo() (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("Unknown panic: %v", r)
-			}
-		}
-	}()
+    defer func() {
+        if r := recover(); r != nil {
+            switch x := r.(type) {
+            case string:
+                err = errors.New(x)
+            case error:
+                err = x
+            default:
+                err = fmt.Errorf("Unknown panic: %v", r)
+            }
+        }
+    }()
 
-	panic("TODO")
+    panic("TODO")
 }
 ```
 
@@ -409,21 +407,22 @@ func foo() (err error) {
 
 ```go
 func main {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case runtime.Error:
-				// 这是运行时错误类型异常
-			case error:
-				// 普通错误类型异常
-			default:
-				// 其他类型异常
-			}
-		}
-	}()
+    defer func() {
+        if r := recover(); r != nil {
+            switch x := r.(type) {
+            case runtime.Error:
+                // 这是运行时错误类型异常
+            case error:
+                // 普通错误类型异常
+            default:
+                // 其他类型异常
+            }
+        }
+    }()
 
-	// ...
+    // ...
 }
 ```
 
 不过这样做和Go语言简单直接的编程哲学背道而驰了。
+

@@ -1,6 +1,6 @@
 # 2.7 CGO内存模型
 
-CGO是架接Go语言和C语言的桥梁，它使二者在二进制接口层面实现了互通，但是我们要注意因两种语言的内存模型的差异而可能引起的问题。如果在CGO处理的跨语言函数调用时涉及到了指针的传递，则可能会出现Go语言和C语言共享某一段内存的场景。我们知道C语言的内存在分配之后就是稳定的，但是Go语言因为函数栈的动态伸缩可能导致栈中内存地址的移动(这是Go和C内存模型的最大差异)。如果C语言持有的是移动之前的Go指针，那么以旧指针访问Go对象时会导致程序崩溃。
+CGO是架接Go语言和C语言的桥梁，它使二者在二进制接口层面实现了互通，但是我们要注意因两种语言的内存模型的差异而可能引起的问题。如果在CGO处理的跨语言函数调用时涉及到了指针的传递，则可能会出现Go语言和C语言共享某一段内存的场景。我们知道C语言的内存在分配之后就是稳定的，但是Go语言因为函数栈的动态伸缩可能导致栈中内存地址的移动\(这是Go和C内存模型的最大差异\)。如果C语言持有的是移动之前的Go指针，那么以旧指针访问Go对象时会导致程序崩溃。
 
 ## 2.7.1 Go访问C内存
 
@@ -15,26 +15,26 @@ package main
 #include <stdlib.h>
 
 void* makeslice(size_t memsize) {
-	return malloc(memsize);
+    return malloc(memsize);
 }
 */
 import "C"
 import "unsafe"
 
 func makeByteSlice(n int) []byte {
-	p := C.makeslice(C.size_t(n))
-	return ((*[1 << 31]byte)(p))[0:n:n]
+    p := C.makeslice(C.size_t(n))
+    return ((*[1 << 31]byte)(p))[0:n:n]
 }
 
 func freeByteSlice(p []byte) {
-	C.free(unsafe.Pointer(&p[0]))
+    C.free(unsafe.Pointer(&p[0]))
 }
 
 func main() {
-	s := makeByteSlice(1<<32+1)
-	s[len(s)-1] = 255
-	print(s[len(s)-1])
-	freeByteSlice(s)
+    s := makeByteSlice(1<<32+1)
+    s[len(s)-1] = 255
+    print(s[len(s)-1])
+    freeByteSlice(s)
 }
 ```
 
@@ -55,21 +55,21 @@ package main
 
 /*
 void printString(const char* s) {
-	printf("%s", s);
+    printf("%s", s);
 }
 */
 import "C"
 
 func printString(s string) {
-	cs := C.CString(s)
-	defer C.free(unsafe.Pointer(cs))
+    cs := C.CString(s)
+    defer C.free(unsafe.Pointer(cs))
 
-	C.printString(cs)
+    C.printString(cs)
 }
 
 func main() {
-	s := "hello"
-	printString(s)
+    s := "hello"
+    printString(s)
 }
 ```
 
@@ -86,23 +86,23 @@ package main
 #include<stdio.h>
 
 void printString(const char* s, int n) {
-	int i;
-	for(i = 0; i < n; i++) {
-		putchar(s[i]);
-	}
-	putchar('\n');
+    int i;
+    for(i = 0; i < n; i++) {
+        putchar(s[i]);
+    }
+    putchar('\n');
 }
 */
 import "C"
 
 func printString(s string) {
-	p := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	C.printString((*C.char)(unsafe.Pointer(p.Data)), C.int(len(s)))
+    p := (*reflect.StringHeader)(unsafe.Pointer(&s))
+    C.printString((*C.char)(unsafe.Pointer(p.Data)), C.int(len(s)))
 }
 
 func main() {
-	s := "hello"
-	printString(s)
+    s := "hello"
+    printString(s)
 }
 ```
 
@@ -139,50 +139,50 @@ import "sync"
 type ObjectId int32
 
 var refs struct {
-	sync.Mutex
-	objs map[ObjectId]interface{}
-	next ObjectId
+    sync.Mutex
+    objs map[ObjectId]interface{}
+    next ObjectId
 }
 
 func init() {
-	refs.Lock()
-	defer refs.Unlock()
+    refs.Lock()
+    defer refs.Unlock()
 
-	refs.objs = make(map[ObjectId]interface{})
-	refs.next = 1000
+    refs.objs = make(map[ObjectId]interface{})
+    refs.next = 1000
 }
 
 func NewObjectId(obj interface{}) ObjectId {
-	refs.Lock()
-	defer refs.Unlock()
+    refs.Lock()
+    defer refs.Unlock()
 
-	id := refs.next
-	refs.next++
+    id := refs.next
+    refs.next++
 
-	refs.objs[id] = obj
-	return id
+    refs.objs[id] = obj
+    return id
 }
 
 func (id ObjectId) IsNil() bool {
-	return id == 0
+    return id == 0
 }
 
 func (id ObjectId) Get() interface{} {
-	refs.Lock()
-	defer refs.Unlock()
+    refs.Lock()
+    defer refs.Unlock()
 
-	return refs.objs[id]
+    return refs.objs[id]
 }
 
 func (id *ObjectId) Free() interface{} {
-	refs.Lock()
-	defer refs.Unlock()
+    refs.Lock()
+    defer refs.Unlock()
 
-	obj := refs.objs[*id]
-	delete(refs.objs, *id)
-	*id = 0
+    obj := refs.objs[*id]
+    delete(refs.objs, *id)
+    *id = 0
 
-	return obj
+    return obj
 }
 ```
 
@@ -199,35 +199,35 @@ extern void FreeGoString(char* );
 extern void PrintGoString(char* );
 
 static void printString(const char* s) {
-	char* gs = NewGoString(s);
-	PrintGoString(gs);
-	FreeGoString(gs);
+    char* gs = NewGoString(s);
+    PrintGoString(gs);
+    FreeGoString(gs);
 }
 */
 import "C"
 
 //export NewGoString
 func NewGoString(s *C.char) *C.char {
-	gs := C.GoString(s)
-	id := NewObjectId(gs)
-	return (*C.char)(unsafe.Pointer(uintptr(id)))
+    gs := C.GoString(s)
+    id := NewObjectId(gs)
+    return (*C.char)(unsafe.Pointer(uintptr(id)))
 }
 
 //export FreeGoString
 func FreeGoString(p *C.char) {
-	id := ObjectId(uintptr(unsafe.Pointer(p)))
-	id.Free()
+    id := ObjectId(uintptr(unsafe.Pointer(p)))
+    id.Free()
 }
 
 //export PrintGoString
 func PrintGoString(s *C.char) {
-	id := ObjectId(uintptr(unsafe.Pointer(p)))
-	gs := id.Get().(string)
-	print(gs)
+    id := ObjectId(uintptr(unsafe.Pointer(p)))
+    gs := id.Get().(string)
+    print(gs)
 }
 
 func main() {
-	C.printString("hello")
+    C.printString("hello")
 }
 ```
 
@@ -244,25 +244,25 @@ func main() {
 extern int* getGoPtr();
 
 static void Main() {
-	int* p = getGoPtr();
-	*p = 42;
+    int* p = getGoPtr();
+    *p = 42;
 }
 */
 import "C"
 
 func main() {
-	C.Main()
+    C.Main()
 }
 
 //export getGoPtr
 func getGoPtr() *C.int {
-	return new(C.int)
+    return new(C.int)
 }
 ```
 
 其中getGoPtr返回的虽然是C语言类型的指针，但是内存本身是从Go语言的new函数分配，也就是由Go语言运行时统一管理的内存。然后我们在C语言的Main函数中调用了getGoPtr函数，此时默认将发送运行时异常：
 
-```
+```text
 $ go run main.go
 panic: runtime error: cgo result has Go pointer
 
@@ -287,15 +287,15 @@ exit status 2
 ```c
 int* getGoPtr()
 {
-	__SIZE_TYPE__ _cgo_ctxt = _cgo_wait_runtime_init_done();
-	struct {
-		int* r0;
-	} __attribute__((__packed__)) a;
-	_cgo_tsan_release();
-	crosscall2(_cgoexp_95d42b8e6230_getGoPtr, &a, 8, _cgo_ctxt);
-	_cgo_tsan_acquire();
-	_cgo_release_context(_cgo_ctxt);
-	return a.r0;
+    __SIZE_TYPE__ _cgo_ctxt = _cgo_wait_runtime_init_done();
+    struct {
+        int* r0;
+    } __attribute__((__packed__)) a;
+    _cgo_tsan_release();
+    crosscall2(_cgoexp_95d42b8e6230_getGoPtr, &a, 8, _cgo_ctxt);
+    _cgo_tsan_acquire();
+    _cgo_release_context(_cgo_ctxt);
+    return a.r0;
 }
 ```
 
@@ -303,10 +303,11 @@ int* getGoPtr()
 
 需要说明的是，cgo默认对返回结果的指针的检查是有代价的，特别是cgo函数返回的结果是一个复杂的数据结构时将花费更多的时间。如果已经确保了cgo函数返回的结果是安全的话，可以通过设置环境变量`GODEBUG=cgocheck=0`来关闭指针检查行为。
 
-```
+```text
 $ GODEBUG=cgocheck=0 go run main.go
 ```
 
 关闭cgocheck功能后再运行上面的代码就不会出现上面的异常的。但是要注意的是，如果C语言使用期间对应的内存被Go运行时释放了，将会导致更严重的崩溃问题。cgocheck默认的值是1，对应一个简化版本的检测，如果需要完整的检测功能可以将cgocheck设置为2。
 
 关于cgo运行时指针检测的功能详细说明可以参考Go语言的官方文档。
+

@@ -7,9 +7,7 @@
 如果我们不考虑均衡的话，现在有n个服务节点，我们完成业务流程只需要从这n个中挑出其中的一个。有几种思路:
 
 1. 按顺序挑: 例如上次选了第一台，那么这次就选第二台，下次第三台，如果已经到了最后一台，那么下一次从第一台开始。这种情况下我们可以把服务节点信息都存储在数组中，每次请求完成下游之后，将一个索引后移即可。在移到尽头时再移回数组开头处。
-
 2. 随机挑一个: 每次都随机挑，真随机伪随机均可。假设选择第 x 台机器，那么x可描述为`rand.Intn()%n`。
-
 3. 根据某种权重，对下游节点进行排序，选择权重最大/小的那一个。
 
 当然了，实际场景我们不可能无脑轮询或者无脑随机，如果对下游请求失败了，我们还需要某种机制来进行重试，如果纯粹的随机算法，存在一定的可能性使你在下一次仍然随机到这次的问题节点。
@@ -22,46 +20,46 @@
 
 ```go
 var endpoints = []string {
-	"100.69.62.1:3232",
-	"100.69.62.32:3232",
-	"100.69.62.42:3232",
-	"100.69.62.81:3232",
-	"100.69.62.11:3232",
-	"100.69.62.113:3232",
-	"100.69.62.101:3232",
+    "100.69.62.1:3232",
+    "100.69.62.32:3232",
+    "100.69.62.42:3232",
+    "100.69.62.81:3232",
+    "100.69.62.11:3232",
+    "100.69.62.113:3232",
+    "100.69.62.101:3232",
 }
 
 // 重点在这个 shuffle
 func shuffle(slice []int) {
-	for i := 0; i < len(slice); i++ {
-		a := rand.Intn(len(slice))
-		b := rand.Intn(len(slice))
-		slice[a], slice[b] = slice[b], slice[a]
-	}
+    for i := 0; i < len(slice); i++ {
+        a := rand.Intn(len(slice))
+        b := rand.Intn(len(slice))
+        slice[a], slice[b] = slice[b], slice[a]
+    }
 }
 
 func request(params map[string]interface{}) error {
-	var indexes = []int {0,1,2,3,4,5,6}
-	var err error
+    var indexes = []int {0,1,2,3,4,5,6}
+    var err error
 
-	shuffle(indexes)
-	maxRetryTimes := 3
+    shuffle(indexes)
+    maxRetryTimes := 3
 
-	idx := 0
-	for i := 0; i < maxRetryTimes; i++ {
-		err = apiRequest(params, endpoints[idx])
-		if err == nil {
-			break
-		}
-		idx++
-	}
+    idx := 0
+    for i := 0; i < maxRetryTimes; i++ {
+        err = apiRequest(params, endpoints[idx])
+        if err == nil {
+            break
+        }
+        idx++
+    }
 
-	if err != nil {
-		// logging
-		return err
-	}
+    if err != nil {
+        // logging
+        return err
+    }
 
-	return nil
+    return nil
 }
 ```
 
@@ -72,12 +70,11 @@ func request(params map[string]interface{}) error {
 真的没有问题么？还是有问题的。这段简短的程序里有两个隐藏的隐患:
 
 1. 没有随机种子。在没有随机种子的情况下，`rand.Intn()`返回的伪随机数序列是固定的。
-
 2. 洗牌不均匀，会导致整个数组第一个节点有大概率被选中，并且多个节点的负载分布不均衡。
 
 第一点比较简单，应该不用在这里给出证明了。关于第二点，我们可以用概率知识来简单证明一下。假设每次挑选都是真随机，我们假设第一个位置的节点在`len(slice)`次交换中都不被选中的概率是`((6/7)*(6/7))^7 ≈ 0.34`。而分布均匀的情况下，我们肯定希望被第一个元素在任意位置上分布的概率均等，所以其被随机选到的概率应该约等于`1/7≈0.14`。
 
-显然，这里给出的洗牌算法对于任意位置的元素来说，有30%的概率不对其进行交换操作。所以所有元素都倾向于留在原来的位置。因为我们每次对`shuffle`数组输入的都是同一个序列，所以第一个元素有更大的概率会被选中。在负载均衡的场景下，也就意味着节点数组中的第一台机器负载会比其它机器高不少(这里至少是3倍以上)。
+显然，这里给出的洗牌算法对于任意位置的元素来说，有30%的概率不对其进行交换操作。所以所有元素都倾向于留在原来的位置。因为我们每次对`shuffle`数组输入的都是同一个序列，所以第一个元素有更大的概率会被选中。在负载均衡的场景下，也就意味着节点数组中的第一台机器负载会比其它机器高不少\(这里至少是3倍以上\)。
 
 ### 6.5.2.2 修正洗牌算法
 
@@ -85,11 +82,11 @@ func request(params map[string]interface{}) error {
 
 ```go
 func shuffle(indexes []int) {
-	for i:=len(indexes); i>0; i-- {
-		lastIdx := i - 1
-		idx := rand.Int(i)
-		indexes[lastIdx], indexes[idx] = indexes[idx], indexes[lastIdx]
-	}
+    for i:=len(indexes); i>0; i-- {
+        lastIdx := i - 1
+        idx := rand.Int(i)
+        indexes[lastIdx], indexes[idx] = indexes[idx], indexes[lastIdx]
+    }
 }
 ```
 
@@ -97,8 +94,8 @@ func shuffle(indexes []int) {
 
 ```go
 func shuffle(n int) []int {
-	b := rand.Perm(n)
-	return b
+    b := rand.Perm(n)
+    return b
 }
 ```
 
@@ -124,55 +121,56 @@ rand.Seed(time.Now().UnixNano())
 package main
 
 import (
-	"fmt"
-	"math/rand"
-	"time"
+    "fmt"
+    "math/rand"
+    "time"
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+    rand.Seed(time.Now().UnixNano())
 }
 
 func shuffle1(slice []int) {
-	for i := 0; i < len(slice); i++ {
-		a := rand.Intn(len(slice))
-		b := rand.Intn(len(slice))
-		slice[a], slice[b] = slice[b], slice[a]
-	}
+    for i := 0; i < len(slice); i++ {
+        a := rand.Intn(len(slice))
+        b := rand.Intn(len(slice))
+        slice[a], slice[b] = slice[b], slice[a]
+    }
 }
 
 func shuffle2(indexes []int) {
-	for i := len(indexes); i > 0; i-- {
-		lastIdx := i - 1
-		idx := rand.Intn(i)
-		indexes[lastIdx], indexes[idx] = indexes[idx], indexes[lastIdx]
-	}
+    for i := len(indexes); i > 0; i-- {
+        lastIdx := i - 1
+        idx := rand.Intn(i)
+        indexes[lastIdx], indexes[idx] = indexes[idx], indexes[lastIdx]
+    }
 }
 
 func main() {
-	var cnt1 = map[int]int{}
-	for i := 0; i < 1000000; i++ {
-		var sl = []int{0, 1, 2, 3, 4, 5, 6}
-		shuffle1(sl)
-		cnt1[sl[0]]++
-	}
+    var cnt1 = map[int]int{}
+    for i := 0; i < 1000000; i++ {
+        var sl = []int{0, 1, 2, 3, 4, 5, 6}
+        shuffle1(sl)
+        cnt1[sl[0]]++
+    }
 
-	var cnt2 = map[int]int{}
-	for i := 0; i < 1000000; i++ {
-		var sl = []int{0, 1, 2, 3, 4, 5, 6}
-		shuffle2(sl)
-		cnt2[sl[0]]++
-	}
+    var cnt2 = map[int]int{}
+    for i := 0; i < 1000000; i++ {
+        var sl = []int{0, 1, 2, 3, 4, 5, 6}
+        shuffle2(sl)
+        cnt2[sl[0]]++
+    }
 
-	fmt.Println(cnt1, "\n", cnt2)
+    fmt.Println(cnt1, "\n", cnt2)
 }
 ```
 
 输出：
 
-```shell
+```text
 map[0:224436 1:128780 5:129310 6:129194 2:129643 3:129384 4:129253]
 map[6:143275 5:143054 3:143584 2:143031 1:141898 0:142631 4:142527]
 ```
 
 分布结果和我们推导出的结论是一致的。
+

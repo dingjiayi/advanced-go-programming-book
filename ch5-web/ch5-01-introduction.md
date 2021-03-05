@@ -1,8 +1,8 @@
-# 5.1 Web 开发简介
+# 5.1 Web开发简介
 
 因为Go的`net/http`包提供了基础的路由函数组合与丰富的功能函数。所以在社区里流行一种用Go编写API不需要框架的观点，在我们看来，如果你的项目的路由在个位数、URI固定且不通过URI来传递参数，那么确实使用官方库也就足够。但在复杂场景下，官方的http库还是有些力有不逮。例如下面这样的路由：
 
-```
+```text
 GET   /card/:id
 POST  /card/:id
 DELTE /card/:id
@@ -28,26 +28,25 @@ package main
 import (...)
 
 func echo(wr http.ResponseWriter, r *http.Request) {
-	msg, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		wr.Write([]byte("echo error"))
-		return
-	}
+    msg, err := ioutil.ReadAll(r.Body)
+    if err != nil {
+        wr.Write([]byte("echo error"))
+        return
+    }
 
-	writeLen, err := wr.Write(msg)
-	if err != nil || writeLen != len(msg) {
-		log.Println(err, "write len:", writeLen)
-	}
+    writeLen, err := wr.Write(msg)
+    if err != nil || writeLen != len(msg) {
+        log.Println(err, "write len:", writeLen)
+    }
 }
 
 func main() {
-	http.HandleFunc("/", echo)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+    http.HandleFunc("/", echo)
+    err := http.ListenAndServe(":8080", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
 }
-
 ```
 
 如果你过了30s还没有完成这个程序，请检查一下你自己的打字速度是不是慢了（开个玩笑 :D）。这个例子是为了说明在Go中写一个HTTP协议的小程序有多么简单。如果你面临的情况比较复杂，例如几十个接口的企业级应用，直接用`net/http`库就显得不太合适了。
@@ -57,15 +56,15 @@ func main() {
 ```go
 //Burrow: http_server.go
 func NewHttpServer(app *ApplicationContext) (*HttpServer, error) {
-	...
-	server.mux.HandleFunc("/", handleDefault)
+    ...
+    server.mux.HandleFunc("/", handleDefault)
 
-	server.mux.HandleFunc("/burrow/admin", handleAdmin)
+    server.mux.HandleFunc("/burrow/admin", handleAdmin)
 
-	server.mux.Handle("/v2/kafka", appHandler{server.app, handleClusterList})
-	server.mux.Handle("/v2/kafka/", appHandler{server.app, handleKafka})
-	server.mux.Handle("/v2/zookeeper", appHandler{server.app, handleClusterList})
-	...
+    server.mux.Handle("/v2/kafka", appHandler{server.app, handleClusterList})
+    server.mux.Handle("/v2/kafka/", appHandler{server.app, handleKafka})
+    server.mux.Handle("/v2/zookeeper", appHandler{server.app, handleClusterList})
+    ...
 }
 ```
 
@@ -83,66 +82,66 @@ func NewHttpServer(app *ApplicationContext) (*HttpServer, error) {
 
 ```go
 func handleKafka(app *ApplicationContext, w http.ResponseWriter, r *http.Request) (int, string) {
-	pathParts := strings.Split(r.URL.Path[1:], "/")
-	if _, ok := app.Config.Kafka[pathParts[2]]; !ok {
-		return makeErrorResponse(http.StatusNotFound, "cluster not found", w, r)
-	}
-	if pathParts[2] == "" {
-		// Allow a trailing / on requests
-		return handleClusterList(app, w, r)
-	}
-	if (len(pathParts) == 3) || (pathParts[3] == "") {
-		return handleClusterDetail(app, w, r, pathParts[2])
-	}
+    pathParts := strings.Split(r.URL.Path[1:], "/")
+    if _, ok := app.Config.Kafka[pathParts[2]]; !ok {
+        return makeErrorResponse(http.StatusNotFound, "cluster not found", w, r)
+    }
+    if pathParts[2] == "" {
+        // Allow a trailing / on requests
+        return handleClusterList(app, w, r)
+    }
+    if (len(pathParts) == 3) || (pathParts[3] == "") {
+        return handleClusterDetail(app, w, r, pathParts[2])
+    }
 
-	switch pathParts[3] {
-	case "consumer":
-		switch {
-		case r.Method == "DELETE":
-			switch {
-			case (len(pathParts) == 5) || (pathParts[5] == ""):
-				return handleConsumerDrop(app, w, r, pathParts[2], pathParts[4])
-			default:
-				return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
-			}
-		case r.Method == "GET":
-			switch {
-			case (len(pathParts) == 4) || (pathParts[4] == ""):
-				return handleConsumerList(app, w, r, pathParts[2])
-			case (len(pathParts) == 5) || (pathParts[5] == ""):
-				// Consumer detail - list of consumer streams/hosts? Can be config info later
-				return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
-			case pathParts[5] == "topic":
-				switch {
-				case (len(pathParts) == 6) || (pathParts[6] == ""):
-					return handleConsumerTopicList(app, w, r, pathParts[2], pathParts[4])
-				case (len(pathParts) == 7) || (pathParts[7] == ""):
-					return handleConsumerTopicDetail(app, w, r, pathParts[2], pathParts[4], pathParts[6])
-				}
-			case pathParts[5] == "status":
-				return handleConsumerStatus(app, w, r, pathParts[2], pathParts[4], false)
-			case pathParts[5] == "lag":
-				return handleConsumerStatus(app, w, r, pathParts[2], pathParts[4], true)
-			}
-		default:
-			return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
-		}
-	case "topic":
-		switch {
-		case r.Method != "GET":
-			return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
-		case (len(pathParts) == 4) || (pathParts[4] == ""):
-			return handleBrokerTopicList(app, w, r, pathParts[2])
-		case (len(pathParts) == 5) || (pathParts[5] == ""):
-			return handleBrokerTopicDetail(app, w, r, pathParts[2], pathParts[4])
-		}
-	case "offsets":
-		// Reserving this endpoint to implement later
-		return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
-	}
+    switch pathParts[3] {
+    case "consumer":
+        switch {
+        case r.Method == "DELETE":
+            switch {
+            case (len(pathParts) == 5) || (pathParts[5] == ""):
+                return handleConsumerDrop(app, w, r, pathParts[2], pathParts[4])
+            default:
+                return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
+            }
+        case r.Method == "GET":
+            switch {
+            case (len(pathParts) == 4) || (pathParts[4] == ""):
+                return handleConsumerList(app, w, r, pathParts[2])
+            case (len(pathParts) == 5) || (pathParts[5] == ""):
+                // Consumer detail - list of consumer streams/hosts? Can be config info later
+                return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
+            case pathParts[5] == "topic":
+                switch {
+                case (len(pathParts) == 6) || (pathParts[6] == ""):
+                    return handleConsumerTopicList(app, w, r, pathParts[2], pathParts[4])
+                case (len(pathParts) == 7) || (pathParts[7] == ""):
+                    return handleConsumerTopicDetail(app, w, r, pathParts[2], pathParts[4], pathParts[6])
+                }
+            case pathParts[5] == "status":
+                return handleConsumerStatus(app, w, r, pathParts[2], pathParts[4], false)
+            case pathParts[5] == "lag":
+                return handleConsumerStatus(app, w, r, pathParts[2], pathParts[4], true)
+            }
+        default:
+            return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
+        }
+    case "topic":
+        switch {
+        case r.Method != "GET":
+            return makeErrorResponse(http.StatusMethodNotAllowed, "request method not supported", w, r)
+        case (len(pathParts) == 4) || (pathParts[4] == ""):
+            return handleBrokerTopicList(app, w, r, pathParts[2])
+        case (len(pathParts) == 5) || (pathParts[5] == ""):
+            return handleBrokerTopicDetail(app, w, r, pathParts[2], pathParts[4])
+        }
+    case "offsets":
+        // Reserving this endpoint to implement later
+        return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
+    }
 
-	// If we fell through, return a 404
-	return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
+    // If we fell through, return a 404
+    return makeErrorResponse(http.StatusNotFound, "unknown API call", w, r)
 }
 ```
 

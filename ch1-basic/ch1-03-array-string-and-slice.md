@@ -1,12 +1,18 @@
 # 1.3 数组、字符串和切片
 
-在主流的编程语言中数组及其相关的数据结构是使用得最为频繁的，只有在它(们)不能满足时才会考虑链表、hash表（hash表可以看作是数组和链表的混合体）和更复杂的自定义数据结构。
+在主流的编程语言中数组及其相关的数据结构是使用得最为频繁的，只有在它\(们\)不能满足时才会考虑链表、hash表（hash表可以看作是数组和链表的混合体）和更复杂的自定义数据结构。
 
 Go语言中数组、字符串和切片三者是密切相关的数据结构。这三种数据类型，在底层原始数据有着相同的内存结构，在上层，因为语法的限制而有着不同的行为表现。首先，Go语言的数组是一种值类型，虽然数组的元素可以被修改，但是数组本身的赋值和函数传参都是以整体复制的方式处理的。Go语言字符串底层数据也是对应的字节数组，但是字符串的只读属性禁止了在程序中对底层字节数组的元素的修改。字符串赋值只是复制了数据地址和对应的长度，而不会导致底层数据的复制。切片的行为更为灵活，切片的结构和字符串结构类似，但是解除了只读限制。切片的底层数据虽然也是对应数据类型的数组，但是每个切片还有独立的长度和容量信息，切片赋值和函数传参数时也是将切片头信息部分按传值方式处理。因为切片头含有底层数据的指针，所以它的赋值也不会导致底层数据的复制。其实Go语言的赋值和函数传参规则很简单，除了闭包函数以引用的方式对外部变量访问之外，其它赋值和函数传参数都是以传值的方式处理。要理解数组、字符串和切片三种不同的处理方式的原因需要详细了解它们的底层数据结构。
+
+```go
+Go语言的赋值和函数传参规则很简单，除了闭包函数以引用的方式对外部变量访问之外，其它赋值和函数传参数都是以传值的方式处理。
+```
 
 ## 1.3.1 数组
 
 数组是一个由固定长度的特定类型元素组成的序列，一个数组可以由零个或多个元素组成。数组的长度是数组类型的组成部分。因为数组的长度是数组类型的一个部分，不同长度或不同类型的数据组成的数组都是不同的类型，因此在Go语言中很少直接使用数组（不同长度的数组因为类型不同无法直接赋值）。和数组对应的类型是切片，切片是可以动态增长和收缩的序列，切片的功能也更加灵活，但是要理解切片的工作原理还是要先理解数组。
+
+> note: 数组长度 + 数据类型 共同决定了数组类型,  如果其一不同,那么他们就是不同的**数组类型;** 数组指针也是, 如果两个数组指针, 他们数组长度或者数组元素类型不一样,那么这两个指针也是不一样的\(这和C还是有却别的\)
 
 我们先看看数组有哪些定义方式:
 
@@ -27,12 +33,13 @@ var d = [...]int{1, 2, 4: 5, 6} // 定义长度为6的int型数组, 元素为 1,
 
 数组的内存结构比较简单。比如下面是一个`[4]int{2,3,5,7}`数组值对应的内存结构：
 
-![](../images/ch1-7-array-4int.ditaa.png)
+![](../.gitbook/assets/ch1-7-array-4int.ditaa.png)
 
-*图 1-7 数组布局*
-
+_图 1-7 数组布局_
 
 Go语言中数组是值语义。一个数组变量即表示整个数组，它并不是隐式的指向第一个元素的指针（比如C语言的数组），而是一个完整的值。当一个数组变量被赋值或者被传递的时候，实际上会复制整个数组。如果数组较大的话，数组的赋值也会有较大的开销。为了避免复制数组带来的开销，可以传递一个指向数组的指针，但是数组指针并不是数组。
+
+> Note: 数组是值语义,不要潜意识想到C的首元素指针
 
 ```go
 var a = [...]int{1, 2, 3} // a 是一个数组
@@ -42,7 +49,7 @@ fmt.Println(a[0], a[1])   // 打印数组的前2个元素
 fmt.Println(b[0], b[1])   // 通过数组指针访问数组元素的方式和数组类似
 
 for i, v := range b {     // 通过数组指针迭代数组的元素
-	fmt.Println(i, v)
+    fmt.Println(i, v)
 }
 ```
 
@@ -53,15 +60,15 @@ for i, v := range b {     // 通过数组指针迭代数组的元素
 我们可以用`for`循环来迭代数组。下面常见的几种方式都可以用来遍历数组：
 
 ```go
-	for i := range a {
-		fmt.Printf("a[%d]: %d\n", i, a[i])
-	}
-	for i, v := range b {
-		fmt.Printf("b[%d]: %d\n", i, v)
-	}
-	for i := 0; i < len(c); i++ {
-		fmt.Printf("c[%d]: %d\n", i, c[i])
-	}
+    for i := range a {
+        fmt.Printf("a[%d]: %d\n", i, a[i])
+    }
+    for i, v := range b {
+        fmt.Printf("b[%d]: %d\n", i, v)
+    }
+    for i := 0; i < len(c); i++ {
+        fmt.Printf("c[%d]: %d\n", i, c[i])
+    }
 ```
 
 用`for range`方式迭代的性能可能会更好一些，因为这种迭代可以保证不会出现数组越界的情形，每轮迭代对数组元素的访问时可以省去对下标越界的判断。
@@ -69,10 +76,10 @@ for i, v := range b {     // 通过数组指针迭代数组的元素
 用`for range`方式迭代，还可以忽略迭代时的下标:
 
 ```go
-	var times [5][0]int
-	for range times {
-		fmt.Println("hello")
-	}
+    var times [5][0]int
+    for range times {
+        fmt.Println("hello")
+    }
 ```
 
 其中`times`对应一个`[5][0]int`类型的数组，虽然第一维数组有长度，但是数组的元素`[0]int`大小是0，因此整个数组占用的内存大小依然是0。没有付出额外的内存代价，我们就通过`for range`方式实现了`times`次快速迭代。
@@ -93,8 +100,8 @@ var line3 = [...]image.Point{{0, 0}, {1, 1}}
 // 图像解码器数组
 var decoder1 [2]func(io.Reader) (image.Image, error)
 var decoder2 = [...]func(io.Reader) (image.Image, error){
-	png.Decode,
-	jpeg.Decode,
+    png.Decode,
+    jpeg.Decode,
 }
 
 // 接口数组
@@ -116,30 +123,30 @@ var f = [...]int{} // 定义一个长度为0的数组
 长度为0的数组在内存中并不占用空间。空数组虽然很少直接使用，但是可以用于强调某种特有类型的操作时避免分配额外的内存空间，比如用于管道的同步操作：
 
 ```go
-	c1 := make(chan [0]int)
-	go func() {
-		fmt.Println("c1")
-		c1 <- [0]int{}
-	}()
-	<-c1
+    c1 := make(chan [0]int)
+    go func() {
+        fmt.Println("c1")
+        c1 <- [0]int{}
+    }()
+    <-c1
 ```
 
 在这里，我们并不关心管道中传输数据的真实类型，其中管道接收和发送操作只是用于消息的同步。对于这种场景，我们用空数组来作为管道类型可以减少管道元素赋值时的开销。当然一般更倾向于用无类型的匿名结构体代替：
 
 ```go
-	c2 := make(chan struct{})
-	go func() {
-		fmt.Println("c2")
-		c2 <- struct{}{} // struct{}部分是类型, {}表示对应的结构体值
-	}()
-	<-c2
+    c2 := make(chan struct{})
+    go func() {
+        fmt.Println("c2")
+        c2 <- struct{}{} // struct{}部分是类型, {}表示对应的结构体值
+    }()
+    <-c2
 ```
 
 我们可以用`fmt.Printf`函数提供的`%T`或`%#v`谓词语法来打印数组的类型和详细信息：
 
 ```go
-	fmt.Printf("b: %T\n", b)  // b: [3]int
-	fmt.Printf("b: %#v\n", b) // b: [3]int{1, 2, 3}
+    fmt.Printf("b: %T\n", b)  // b: [3]int
+    fmt.Printf("b: %#v\n", b) // b: [3]int{1, 2, 3}
 ```
 
 在Go语言中，数组类型是切片和字符串等结构的基础。以上数组的很多操作都可以直接用于字符串或切片中。
@@ -152,8 +159,8 @@ Go语言字符串的底层结构在`reflect.StringHeader`中定义：
 
 ```go
 type StringHeader struct {
-	Data uintptr
-	Len  int
+    Data uintptr
+    Len  int
 }
 ```
 
@@ -161,16 +168,15 @@ type StringHeader struct {
 
 我们可以看看字符串“Hello, world”本身对应的内存结构：
 
-![](../images/ch1-8-string-1.ditaa.png)
+![](../.gitbook/assets/ch1-8-string-1.ditaa.png)
 
-*图 1-8 字符串布局*
-
+_图 1-8 字符串布局_
 
 分析可以发现，“Hello, world”字符串底层数据和以下数组是完全一致的：
 
 ```go
 var data = [...]byte{
-	'h', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd',
+    'h', 'e', 'l', 'l', 'o', ',', ' ', 'w', 'o', 'r', 'l', 'd',
 }
 ```
 
@@ -217,9 +223,9 @@ fmt.Println("\xe7\x95\x8c") // 打印: 界
 
 下图展示了“Hello, 世界”字符串的内存结构布局:
 
-![](../images/ch1-9-string-2.ditaa.png)
+![](../.gitbook/assets/ch1-9-string-2.ditaa.png)
 
-*图 1-9 字符串布局*
+_图 1-9 字符串布局_
 
 Go语言的字符串中可以存放任意的二进制字节序列，而且即使是UTF8字符序列也可能会遇到坏的编码。如果遇到一个错误的UTF8编码输入，将生成一个特别的Unicode字符‘\uFFFD’，这个字符在不同的软件中的显示效果可能不太一样，在印刷中这个符号通常是一个黑色六角形或钻石形状，里面包含一个白色的问号‘�’。
 
@@ -233,7 +239,7 @@ fmt.Println("\xe4\x00\x00\xe7\x95\x8cabc") // �界abc
 
 ```go
 for i, c := range "\xe4\x00\x00\xe7\x95\x8cabc" {
-	fmt.Println(i, c)
+    fmt.Println(i, c)
 }
 // 0 65533  // \uFFFD, 对应 �
 // 1 0      // 空字符
@@ -248,7 +254,7 @@ for i, c := range "\xe4\x00\x00\xe7\x95\x8cabc" {
 
 ```go
 for i, c := range []byte("世界abc") {
-	fmt.Println(i, c)
+    fmt.Println(i, c)
 }
 ```
 
@@ -257,14 +263,14 @@ for i, c := range []byte("世界abc") {
 ```go
 const s = "\xe4\x00\x00\xe7\x95\x8cabc"
 for i := 0; i < len(s); i++ {
-	fmt.Printf("%d %x\n", i, s[i])
+    fmt.Printf("%d %x\n", i, s[i])
 }
 ```
 
 Go语言除了`for range`语法对UTF8字符串提供了特殊支持外，还对字符串和`[]rune`类型的相互转换提供了特殊的支持。
 
 ```go
-fmt.Printf("%#v\n", []rune("世界"))      		// []int32{19990, 30028}
+fmt.Printf("%#v\n", []rune("世界"))              // []int32{19990, 30028}
 fmt.Printf("%#v\n", string([]rune{'世', '界'})) // 世界
 ```
 
@@ -278,12 +284,12 @@ fmt.Printf("%#v\n", string([]rune{'世', '界'})) // 世界
 
 ```go
 func forOnString(s string, forBody func(i int, r rune)) {
-	for i := 0; len(s) > 0; {
-		r, size := utf8.DecodeRuneInString(s)
-		forBody(i, r)
-		s = s[size:]
-		i += size
-	}
+    for i := 0; len(s) > 0; {
+        r, size := utf8.DecodeRuneInString(s)
+        forBody(i, r)
+        s = s[size:]
+        i += size
+    }
 }
 ```
 
@@ -293,12 +299,12 @@ func forOnString(s string, forBody func(i int, r rune)) {
 
 ```go
 func str2bytes(s string) []byte {
-	p := make([]byte, len(s))
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		p[i] = c
-	}
-	return p
+    p := make([]byte, len(s))
+    for i := 0; i < len(s); i++ {
+        c := s[i]
+        p[i] = c
+    }
+    return p
 }
 ```
 
@@ -308,16 +314,16 @@ func str2bytes(s string) []byte {
 
 ```go
 func bytes2str(s []byte) (p string) {
-	data := make([]byte, len(s))
-	for i, c := range s {
-		data[i] = c
-	}
+    data := make([]byte, len(s))
+    for i, c := range s {
+        data[i] = c
+    }
 
-	hdr := (*reflect.StringHeader)(unsafe.Pointer(&p))
-	hdr.Data = uintptr(unsafe.Pointer(&data[0]))
-	hdr.Len = len(s)
+    hdr := (*reflect.StringHeader)(unsafe.Pointer(&p))
+    hdr.Data = uintptr(unsafe.Pointer(&data[0]))
+    hdr.Len = len(s)
 
-	return p
+    return p
 }
 ```
 
@@ -327,8 +333,8 @@ func bytes2str(s []byte) (p string) {
 
 ```go
 func str2runes(s string) []rune{
-	var p []int32
-	for len(s)>0 {
+    var p []int32
+    for len(s)>0 {
         r,size:=utf8.DecodeRuneInString(s)
         p=append(p,int32(r))
         s=s[size:]
@@ -343,19 +349,19 @@ func str2runes(s string) []rune{
 
 ```go
 func runes2string(s []int32) string {
-	var p []byte
-	buf := make([]byte, 3)
-	for _, r := range s {
-		n := utf8.EncodeRune(buf, r)
-		p = append(p, buf[:n]...)
-	}
-	return string(p)
+    var p []byte
+    buf := make([]byte, 3)
+    for _, r := range s {
+        n := utf8.EncodeRune(buf, r)
+        p = append(p, buf[:n]...)
+    }
+    return string(p)
 }
 ```
 
 同样因为底层内存结构的差异，`[]rune`到字符串的转换也必然会导致重新构造字符串。这种强制转换并不存在前面提到的优化情况。
 
-## 1.3.3 切片(slice)
+## 1.3.3 切片\(slice\)
 
 简单地说，切片就是一种简化版的动态数组。因为动态数组的长度是不固定，切片的长度自然也就不能是类型的组成部分了。数组虽然有适用它们的地方，但是数组的类型和操作都不够灵活，因此在Go代码中数组使用的并不多。而切片则使用得相当广泛，理解切片的原理和用法是一个Go程序员的必备技能。
 
@@ -363,32 +369,31 @@ func runes2string(s []int32) string {
 
 ```go
 type SliceHeader struct {
-	Data uintptr
-	Len  int
-	Cap  int
+    Data uintptr
+    Len  int
+    Cap  int
 }
 ```
 
 可以看出切片的开头部分和Go字符串是一样的，但是切片多了一个`Cap`成员表示切片指向的内存空间的最大容量（对应元素的个数，而不是字节数）。下图是`x := []int{2,3,5,7,11}`和`y := x[1:3]`两个切片对应的内存结构。
 
-![](../images/ch1-10-slice-1.ditaa.png)
+![](../.gitbook/assets/ch1-10-slice-1.ditaa.png)
 
-*图 1-10 切片布局*
-
+_图 1-10 切片布局_
 
 让我们看看切片有哪些定义方式：
 
 ```go
 var (
-	a []int               // nil切片, 和 nil 相等, 一般用来表示一个不存在的切片
-	b = []int{}           // 空切片, 和 nil 不相等, 一般用来表示一个空的集合
-	c = []int{1, 2, 3}    // 有3个元素的切片, len和cap都为3
-	d = c[:2]             // 有2个元素的切片, len为2, cap为3
-	e = c[0:2:cap(c)]     // 有2个元素的切片, len为2, cap为3
-	f = c[:0]             // 有0个元素的切片, len为0, cap为3
-	g = make([]int, 3)    // 有3个元素的切片, len和cap都为3
-	h = make([]int, 2, 3) // 有2个元素的切片, len为2, cap为3
-	i = make([]int, 0, 3) // 有0个元素的切片, len为0, cap为3
+    a []int               // nil切片, 和 nil 相等, 一般用来表示一个不存在的切片
+    b = []int{}           // 空切片, 和 nil 不相等, 一般用来表示一个空的集合
+    c = []int{1, 2, 3}    // 有3个元素的切片, len和cap都为3
+    d = c[:2]             // 有2个元素的切片, len为2, cap为3
+    e = c[0:2:cap(c)]     // 有2个元素的切片, len为2, cap为3
+    f = c[:0]             // 有0个元素的切片, len为0, cap为3
+    g = make([]int, 3)    // 有3个元素的切片, len和cap都为3
+    h = make([]int, 2, 3) // 有2个元素的切片, len为2, cap为3
+    i = make([]int, 0, 3) // 有0个元素的切片, len为0, cap为3
 )
 ```
 
@@ -397,21 +402,20 @@ var (
 遍历切片的方式和遍历数组的方式类似：
 
 ```go
-	for i := range a {
-		fmt.Printf("a[%d]: %d\n", i, a[i])
-	}
-	for i, v := range b {
-		fmt.Printf("b[%d]: %d\n", i, v)
-	}
-	for i := 0; i < len(c); i++ {
-		fmt.Printf("c[%d]: %d\n", i, c[i])
-	}
+    for i := range a {
+        fmt.Printf("a[%d]: %d\n", i, a[i])
+    }
+    for i, v := range b {
+        fmt.Printf("b[%d]: %d\n", i, v)
+    }
+    for i := 0; i < len(c); i++ {
+        fmt.Printf("c[%d]: %d\n", i, c[i])
+    }
 ```
 
 其实除了遍历之外，只要是切片的底层数据指针、长度和容量没有发生变化的话，对切片的遍历、元素的读取和修改都和数组是一样的。在对切片本身赋值或参数传递时，和数组指针的操作方式类似，只是复制切片头信息（`reflect.SliceHeader`），并不会复制底层的数据。对于类型，和数组的最大不同是，切片的类型和长度信息无关，只要是相同类型元素构成的切片均对应相同的切片类型。
 
 如前所说，切片是一种简化版的动态数组，这是切片类型的灵魂。除了构造切片和遍历切片之外，添加切片元素、删除切片元素都是切片处理中经常遇到的问题。
-
 
 **添加切片元素**
 
@@ -456,7 +460,7 @@ a[i] = x             // 设置新添加的元素
 
 第一句`append`用于扩展切片的长度，为要插入的元素留出空间。第二句`copy`操作将要插入位置开始之后的元素向后挪动一个位置。第三句真实地将新添加的元素赋值到对应的位置。操作语句虽然冗长了一点，但是相比前面的方法，可以减少中间创建的临时切片。
 
-用`copy`和`append`组合也可以实现在中间位置插入多个元素(也就是插入一个切片):
+用`copy`和`append`组合也可以实现在中间位置插入多个元素\(也就是插入一个切片\):
 
 ```go
 a = append(a, x...)       // 为x切片扩展足够的空间
@@ -520,16 +524,15 @@ a = a[:i+copy(a[i:], a[i+N:])]  // 删除中间N个元素
 
 比如下面的`TrimSpace`函数用于删除`[]byte`中的空格。函数实现利用了0长切片的特性，实现高效而且简洁。
 
-
 ```go
 func TrimSpace(s []byte) []byte {
-	b := s[:0]
-	for _, x := range s {
-		if x != ' ' {
-			b = append(b, x)
-		}
-	}
-	return b
+    b := s[:0]
+    for _, x := range s {
+        if x != ' ' {
+            b = append(b, x)
+        }
+    }
+    return b
 }
 ```
 
@@ -537,18 +540,17 @@ func TrimSpace(s []byte) []byte {
 
 ```go
 func Filter(s []byte, fn func(x byte) bool) []byte {
-	b := s[:0]
-	for _, x := range s {
-		if !fn(x) {
-			b = append(b, x)
-		}
-	}
-	return b
+    b := s[:0]
+    for _, x := range s {
+        if !fn(x) {
+            b = append(b, x)
+        }
+    }
+    return b
 }
 ```
 
 切片高效操作的要点是要降低内存分配的次数，尽量保证`append`操作不会超出`cap`的容量，降低触发内存分配的次数和每次分配内存大小。
-
 
 **避免切片内存泄漏**
 
@@ -558,8 +560,8 @@ func Filter(s []byte, fn func(x byte) bool) []byte {
 
 ```go
 func FindPhoneNumber(filename string) []byte {
-	b, _ := ioutil.ReadFile(filename)
-	return regexp.MustCompile("[0-9]+").Find(b)
+    b, _ := ioutil.ReadFile(filename)
+    return regexp.MustCompile("[0-9]+").Find(b)
 }
 ```
 
@@ -569,9 +571,9 @@ func FindPhoneNumber(filename string) []byte {
 
 ```go
 func FindPhoneNumber(filename string) []byte {
-	b, _ := ioutil.ReadFile(filename)
-	b = regexp.MustCompile("[0-9]+").Find(b)
-	return append([]byte{}, b...)
+    b, _ := ioutil.ReadFile(filename)
+    b = regexp.MustCompile("[0-9]+").Find(b)
+    return append([]byte{}, b...)
 }
 ```
 
@@ -592,7 +594,6 @@ a = a[:len(a)-1]  // 从切片删除最后一个元素
 
 当然，如果切片存在的周期很短的话，可以不用刻意处理这个问题。因为如果切片本身已经可以被GC回收的话，切片对应的每个元素自然也就是可以被回收的了。
 
-
 **切片类型强制转换**
 
 为了安全，当两个切片类型`[]T`和`[]Y`的底层原始切片类型不同时，Go语言是无法直接转换类型的。不过安全都是有一定代价的，有时候这种转换是有它的价值的——可以简化编码或者是提升代码的性能。比如在64位系统上，需要对一个`[]float64`切片进行高速排序，我们可以将它强制转为`[]int`整数切片，然后以整数的方式进行排序（因为`float64`遵循IEEE754浮点数标准特性，当浮点数有序时对应的整数也必然是有序的）。
@@ -607,22 +608,22 @@ import "sort"
 var a = []float64{4, 2, 5, 7, 2, 1, 88, 1}
 
 func SortFloat64FastV1(a []float64) {
-	// 强制类型转换
-	var b []int = ((*[1 << 20]int)(unsafe.Pointer(&a[0])))[:len(a):cap(a)]
+    // 强制类型转换
+    var b []int = ((*[1 << 20]int)(unsafe.Pointer(&a[0])))[:len(a):cap(a)]
 
-	// 以int方式给float64排序
-	sort.Ints(b)
+    // 以int方式给float64排序
+    sort.Ints(b)
 }
 
 func SortFloat64FastV2(a []float64) {
-	// 通过 reflect.SliceHeader 更新切片头部信息实现转换
-	var c []int
-	aHdr := (*reflect.SliceHeader)(unsafe.Pointer(&a))
-	cHdr := (*reflect.SliceHeader)(unsafe.Pointer(&c))
-	*cHdr = *aHdr
+    // 通过 reflect.SliceHeader 更新切片头部信息实现转换
+    var c []int
+    aHdr := (*reflect.SliceHeader)(unsafe.Pointer(&a))
+    cHdr := (*reflect.SliceHeader)(unsafe.Pointer(&c))
+    *cHdr = *aHdr
 
-	// 以int方式给float64排序
-	sort.Ints(c)
+    // 以int方式给float64排序
+    sort.Ints(c)
 }
 ```
 

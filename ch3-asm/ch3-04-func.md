@@ -8,14 +8,13 @@
 
 函数的定义的语法如下：
 
-```
+```text
 TEXT symbol(SB), [flags,] $framesize[-argsize]
 ```
 
 函数的定义部分由5个部分组成：TEXT指令、函数名、可选的flags标志、函数帧大小和可选的函数参数大小。
 
 其中TEXT用于定义函数符号，函数名中当前包的路径可以省略。函数的名字后面是`(SB)`，表示是函数名符号相对于SB伪寄存器的偏移量，二者组合在一起最终是绝对地址。作为全局的标识符的全局变量和全局函数的名字一般都是基于SB伪寄存器的相对地址。标志部分用于指示函数的一些特殊行为，标志在`textlags.h`文件中定义，常见的`NOSPLIT`主要用于指示叶子函数不进行栈分裂。framesize部分表示函数的局部变量需要多少栈空间，其中包含调用其它函数时准备调用参数的隐式栈空间。最后是可以省略的参数大小，之所以可以省略是因为编译器可以从Go语言的函数声明中推导出函数参数的大小。
-
 
 我们首先从一个简单的Swap函数开始。Swap函数用于交互输入的两个参数的顺序，然后通过返回值返回交换了顺序的结果。如果用Go语言中声明Swap函数，大概这样的：
 
@@ -28,7 +27,7 @@ func Swap(a, b int) (int, int)
 
 下面是main包中Swap函数在汇编中两种定义方式：
 
-```
+```text
 // func Swap(a, b int) (int, int)
 TEXT ·Swap(SB), NOSPLIT, $0-32
 
@@ -38,10 +37,9 @@ TEXT ·Swap(SB), NOSPLIT, $0
 
 下图是Swap函数几种不同写法的对比关系图：
 
-![](../images/ch3-8-func-decl-01.ditaa.png)
+![](../.gitbook/assets/ch3-8-func-decl-01.ditaa.png)
 
-*图 3-8 函数定义*
-
+_图 3-8 函数定义_
 
 第一种是最完整的写法：函数名部分包含了当前包的路径，同时指明了函数的参数大小为32个字节（对应参数和返回值的4个int类型）。第二种写法则比较简洁，省略了当前包的路径和参数的大小。如果有NOSPLIT标注，会禁止汇编器为汇编函数插入栈分裂的代码。NOSPLIT对应Go语言中的`//go:nosplit`注释。
 
@@ -49,7 +47,7 @@ TEXT ·Swap(SB), NOSPLIT, $0
 
 需要注意的是函数也没有类型，上面定义的Swap函数签名可以下面任意一种格式：
 
-```
+```text
 func Swap(a, b, c int) int
 func Swap(a, b, c, d int)
 func Swap() (a, b, c, d int)
@@ -71,7 +69,7 @@ func Swap(a, b int) (ret0, ret1 int)
 
 对于这个函数，我们可以轻易看出它需要4个int类型的空间，参数和返回值的大小也就是32个字节：
 
-```
+```text
 TEXT ·Swap(SB), $0-32
 ```
 
@@ -79,26 +77,24 @@ TEXT ·Swap(SB), $0-32
 
 但是在汇编代码中，我们并不能直接以`+0(FP)`的方式来使用参数。为了编写易于维护的汇编代码，Go汇编语言要求，任何通过FP伪寄存器访问的变量必和一个临时标识符前缀组合后才能有效，一般使用参数对应的变量名作为前缀。
 
-
 下图是Swap函数中参数和返回值在内存中的布局图：
 
-![](../images/ch3-9-func-decl-02.ditaa.png)
+![](../.gitbook/assets/ch3-9-func-decl-02.ditaa.png)
 
-*图 3-9 函数定义*
+_图 3-9 函数定义_
 
 下面的代码演示了如何在汇编函数中使用参数和返回值：
 
-```
+```text
 TEXT ·Swap(SB), $0
-	MOVQ a+0(FP), AX     // AX = a
-	MOVQ b+8(FP), BX     // BX = b
-	MOVQ BX, ret0+16(FP) // ret0 = BX
-	MOVQ AX, ret1+24(FP) // ret1 = AX
-	RET
+    MOVQ a+0(FP), AX     // AX = a
+    MOVQ b+8(FP), BX     // BX = b
+    MOVQ BX, ret0+16(FP) // ret0 = BX
+    MOVQ AX, ret1+24(FP) // ret1 = AX
+    RET
 ```
 
 从代码可以看出a、b、ret0和ret1的内存地址是依次递增的，FP伪寄存器是第一个变量的开始地址。
-
 
 ## 3.4.3 参数和返回值的内存布局
 
@@ -116,12 +112,12 @@ func Foo(a bool, b int16) (c []byte)
 
 ```go
 type Foo_args struct {
-	a bool
-	b int16
-	c []byte
+    a bool
+    b int16
+    c []byte
 }
 type Foo_returns struct {
-	c []byte
+    c []byte
 }
 ```
 
@@ -129,20 +125,20 @@ type Foo_returns struct {
 
 ```go
 func Foo(FP *SomeFunc_args, FP_ret *SomeFunc_returns) {
-	// a = FP + offsetof(&args.a)
-	_ = unsafe.Offsetof(FP.a) + uintptr(FP) // a
-	// b = FP + offsetof(&args.b)
+    // a = FP + offsetof(&args.a)
+    _ = unsafe.Offsetof(FP.a) + uintptr(FP) // a
+    // b = FP + offsetof(&args.b)
 
-	// argsize = sizeof(args)
-	argsize = unsafe.Offsetof(FP)
+    // argsize = sizeof(args)
+    argsize = unsafe.Offsetof(FP)
 
-	// c = FP + argsize + offsetof(&return.c)
-	_ = uintptr(FP) + argsize + unsafe.Offsetof(FP_ret.c)
+    // c = FP + argsize + offsetof(&return.c)
+    _ = uintptr(FP) + argsize + unsafe.Offsetof(FP_ret.c)
 
-	// framesize = sizeof(args) + sizeof(returns)
-	_ = unsafe.Offsetof(FP) + unsafe.Offsetof(FP_ret)
+    // framesize = sizeof(args) + sizeof(returns)
+    _ = unsafe.Offsetof(FP) + unsafe.Offsetof(FP_ret)
 
-	return
+    return
 }
 ```
 
@@ -150,21 +146,20 @@ func Foo(FP *SomeFunc_args, FP_ret *SomeFunc_returns) {
 
 Foo函数的参数和返回值的大小和内存布局：
 
-![](../images/ch3-10-func-arg-01.ditaa.png)
+![](../.gitbook/assets/ch3-10-func-arg-01.ditaa.png)
 
-*图 3-10 函数的参数*
-
+_图 3-10 函数的参数_
 
 下面的代码演示了Foo汇编函数参数和返回值的定位：
 
-```
+```text
 TEXT ·Foo(SB), $0
-	MOVEQ a+0(FP),       AX // a
-	MOVEQ b+2(FP),       BX // b
-	MOVEQ c_dat+8*1(FP), CX // c.Data
-	MOVEQ c_len+8*2(FP), DX // c.Len
-	MOVEQ c_cap+8*3(FP), DI // c.Cap
-	RET
+    MOVEQ a+0(FP),       AX // a
+    MOVEQ b+2(FP),       BX // b
+    MOVEQ c_dat+8*1(FP), CX // c.Data
+    MOVEQ c_len+8*2(FP), DX // c.Len
+    MOVEQ c_cap+8*3(FP), DI // c.Cap
+    RET
 ```
 
 其中a和b参数之间出现了一个字节的空洞，b和c之间出现了4个字节的空洞。出现空洞的原因是要保证每个参数变量地址都要对齐到相应的倍数。
@@ -181,22 +176,22 @@ TEXT ·Foo(SB), $0
 
 ```go
 func Foo() {
-	var c []byte
-	var b int16
-	var a bool
+    var c []byte
+    var b int16
+    var a bool
 }
 ```
 
 然后通过汇编语言重新实现Foo函数，并通过伪SP来定位局部变量：
 
-```
+```text
 TEXT ·Foo(SB), $32-0
-	MOVQ a-32(SP),      AX // a
-	MOVQ b-30(SP),      BX // b
-	MOVQ c_data-24(SP), CX // c.Data
-	MOVQ c_len-16(SP),  DX // c.Len
-	MOVQ c_cap-8(SP),   DI // c.Cap
-	RET
+    MOVQ a-32(SP),      AX // a
+    MOVQ b-30(SP),      BX // b
+    MOVQ c_data-24(SP), CX // c.Data
+    MOVQ c_len-16(SP),  DX // c.Len
+    MOVQ c_cap-8(SP),   DI // c.Cap
+    RET
 ```
 
 Foo函数有3个局部变量，但是没有调用其它的函数，因为对齐和填充的问题导致函数的栈帧大小为32个字节。因为Foo函数没有参数和返回值，因此参数和返回值大小为0个字节，当然这个部分可以省略不写。而局部变量中先定义的变量c离伪SP寄存器对应的地址最近，最后定义的变量a离伪SP寄存器最远。有两个因素导致出现这种逆序的结果：一个从Go语言函数角度理解，先定义的c变量地址要比后定义的变量的地址更大；另一个是伪SP寄存器对应栈帧的底部，而X86中栈是从高向低生长的，所以最先定义有着更大地址的c变量离栈的底部伪SP更近。
@@ -205,16 +200,16 @@ Foo函数有3个局部变量，但是没有调用其它的函数，因为对齐�
 
 ```go
 func Foo() {
-	var local [1]struct{
-		a bool
-		b int16
-		c []byte
-	}
-	var SP = &local[1];
+    var local [1]struct{
+        a bool
+        b int16
+        c []byte
+    }
+    var SP = &local[1];
 
-	_ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.a)) + uintptr(&SP) // a
-	_ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.b)) + uintptr(&SP) // b
-	_ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.c)) + uintptr(&SP) // c
+    _ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.a)) + uintptr(&SP) // a
+    _ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.b)) + uintptr(&SP) // b
+    _ = -(unsafe.Sizeof(local)-unsafe.Offsetof(local.c)) + uintptr(&SP) // c
 }
 ```
 
@@ -224,10 +219,9 @@ func Foo() {
 
 下面是Foo函数的局部变量的大小和内存布局：
 
-![](../images/ch3-11-func-local-var-01.ditaa.png)
+![](../.gitbook/assets/ch3-11-func-local-var-01.ditaa.png)
 
-*图 3-11 函数的局部变量*
-
+_图 3-11 函数的局部变量_
 
 从图中可以看出Foo函数局部变量和前一个例子中参数和返回值的内存布局是完全一样的，这也是我们故意设计的结果。但是参数和返回值是通过伪FP寄存器定位的，FP寄存器对应第一个参数的开始地址（第一个参数地址较低），因此每个变量的偏移量是正数。而局部变量是通过伪SP寄存器定位的，而伪SP寄存器对应的是第一个局部变量的结束地址（第一个局部变量地址较大），因此每个局部变量的偏移量都是负数。
 
@@ -241,16 +235,16 @@ func Foo() {
 
 ```go
 func main() {
-	printsum(1, 2)
+    printsum(1, 2)
 }
 
 func printsum(a, b int) {
-	var ret = sum(a, b)
-	println(ret)
+    var ret = sum(a, b)
+    println(ret)
 }
 
 func sum(a, b int) int {
-	return a+b
+    return a+b
 }
 ```
 
@@ -258,10 +252,9 @@ func sum(a, b int) int {
 
 下图展示了三个函数逐级调用时内存中函数参数和返回值的布局：
 
-![](../images/ch3-12-func-call-frame-01.ditaa.png)
+![](../.gitbook/assets/ch3-12-func-call-frame-01.ditaa.png)
 
-*图 3-12 函数帧*
-
+_图 3-12 函数帧_
 
 为了便于理解，我们对真实的内存布局进行了简化。要记住的是调用函数时，被调用函数的参数和返回值内存空间都必须由调用者提供。因此函数的局部变量和为调用其它函数准备的栈空间总和就确定了函数帧的大小。调用其它函数前调用方要选择保存相关寄存器到栈中，并在调用函数返回后选择要恢复的寄存器进行保存。最终通过CALL指令调用函数的过程和调用我们熟悉的调用println函数输出的过程类似。
 
@@ -285,17 +278,17 @@ Go语言中函数调用是一个复杂的问题，因为Go函数不仅仅要了�
 
 因为汇编语言中无法定义临时变量，我们增加一个参数用于临时寄存器。下面是通过SWAP宏函数交换AX和BX寄存器的值，然后返回结果：
 
-```
+```text
 // func Swap(a, b int) (int, int)
 TEXT ·Swap(SB), $0-32
-	MOVQ a+0(FP), AX // AX = a
-	MOVQ b+8(FP), BX // BX = b
+    MOVQ a+0(FP), AX // AX = a
+    MOVQ b+8(FP), BX // BX = b
 
-	SWAP(AX, BX, CX)     // AX, BX = b, a
+    SWAP(AX, BX, CX)     // AX, BX = b, a
 
-	MOVQ AX, ret0+16(FP) // return
-	MOVQ BX, ret1+24(FP) //
-	RET
+    MOVQ AX, ret0+16(FP) // return
+    MOVQ BX, ret1+24(FP) //
+    RET
 ```
 
 因为预处理器可以通过条件编译针对不同的平台定义宏的实现，这样可以简化平台带来的差异。

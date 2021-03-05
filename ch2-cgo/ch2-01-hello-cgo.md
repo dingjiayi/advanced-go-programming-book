@@ -13,7 +13,7 @@ package main
 import "C"
 
 func main() {
-	println("hello cgo")
+    println("hello cgo")
 }
 ```
 
@@ -31,7 +31,7 @@ package main
 import "C"
 
 func main() {
-	C.puts(C.CString("Hello, World\n"))
+    C.puts(C.CString("Hello, World\n"))
 }
 ```
 
@@ -53,13 +53,13 @@ package main
 #include <stdio.h>
 
 static void SayHello(const char* s) {
-	puts(s);
+    puts(s);
 }
 */
 import "C"
 
 func main() {
-	C.SayHello(C.CString("Hello, World\n"))
+    C.SayHello(C.CString("Hello, World\n"))
 }
 ```
 
@@ -73,7 +73,7 @@ func main() {
 #include <stdio.h>
 
 void SayHello(const char* s) {
-	puts(s);
+    puts(s);
 }
 ```
 
@@ -87,7 +87,7 @@ package main
 import "C"
 
 func main() {
-	C.SayHello(C.CString("Hello, World\n"))
+    C.SayHello(C.CString("Hello, World\n"))
 }
 ```
 
@@ -115,7 +115,7 @@ void SayHello(const char* s);
 #include <stdio.h>
 
 void SayHello(const char* s) {
-	puts(s);
+    puts(s);
 }
 ```
 
@@ -123,24 +123,23 @@ void SayHello(const char* s) {
 
 接口文件hello.h是hello模块的实现者和使用者共同的约定，但是该约定并没有要求必须使用C语言来实现SayHello函数。我们也可以用C++语言来重新实现这个C语言函数：
 
-```c++
+```cpp
 // hello.cpp
 
 #include <iostream>
 
 extern "C" {
-	#include "hello.h"
+    #include "hello.h"
 }
 
 void SayHello(const char* s) {
-	std::cout << s;
+    std::cout << s;
 }
 ```
 
 在C++版本的SayHello函数实现中，我们通过C++特有的`std::cout`输出流输出字符串。不过为了保证C++语言实现的SayHello函数满足C语言头文件hello.h定义的函数规范，我们需要通过`extern "C"`语句指示该函数的链接符号遵循C语言的规则。
 
 在采用面向C语言API接口编程之后，我们彻底解放了模块实现者的语言枷锁：实现者可以用任何编程语言实现模块，只要最终满足公开的API约定即可。我们可以用C语言实现SayHello函数，也可以使用更复杂的C++语言来实现SayHello函数，当然我们也可以用汇编语言甚至Go语言来重新实现SayHello函数。
-
 
 ## 2.1.5 用Go重新实现C函数
 
@@ -163,7 +162,7 @@ import "fmt"
 
 //export SayHello
 func SayHello(s *C.char) {
-	fmt.Print(C.GoString(s))
+    fmt.Print(C.GoString(s))
 }
 ```
 
@@ -178,7 +177,7 @@ package main
 import "C"
 
 func main() {
-	C.SayHello(C.CString("Hello, World\n"))
+    C.SayHello(C.CString("Hello, World\n"))
 }
 ```
 
@@ -197,16 +196,16 @@ package main
 import "C"
 
 import (
-	"fmt"
+    "fmt"
 )
 
 func main() {
-	C.SayHello(C.CString("Hello, World\n"))
+    C.SayHello(C.CString("Hello, World\n"))
 }
 
 //export SayHello
 func SayHello(s *C.char) {
-	fmt.Print(C.GoString(s))
+    fmt.Print(C.GoString(s))
 }
 ```
 
@@ -221,19 +220,20 @@ package main
 import "C"
 
 import (
-	"fmt"
+    "fmt"
 )
 
 func main() {
-	C.SayHello("Hello, World\n")
+    C.SayHello("Hello, World\n")
 }
 
 //export SayHello
 func SayHello(s string) {
-	fmt.Print(s)
+    fmt.Print(s)
 }
 ```
 
 虽然看起来全部是Go语言代码，但是执行的时候是先从Go语言的`main`函数，到CGO自动生成的C语言版本`SayHello`桥接函数，最后又回到了Go语言环境的`SayHello`函数。这个代码包含了CGO编程的精华，读者需要深入理解。
 
-*思考题: main函数和SayHello函数是否在同一个Goroutine里执行？*
+_思考题: main函数和SayHello函数是否在同一个Goroutine里执行？_
+

@@ -6,7 +6,7 @@
 
 > 在线交易处理（OLTP, Online transaction processing）是指透过信息系统、电脑网络及数据库，以线上交易的方式处理一般即时性的作业数据，和更早期传统数据库系统大量批量的作业方式并不相同。OLTP通常被运用于自动化的数据处理工作，如订单输入、金融业务…等反复性的日常性交易活动。和其相对的是属于决策分析层次的联机分析处理（OLAP）。
 
-在互联网的业务场景中，也有一些实时性要求不高(可以接受多秒的延迟)，但是查询复杂性却很高的场景。举个例子，在电商的WMS系统中，或者在大多数业务场景丰富的CRM或者客服系统中，可能需要提供几十个字段的随意组合查询功能。这种系统的数据维度天生众多，比如一个电商的WMS中对一件货物的描述，可能有下面这些字段：
+在互联网的业务场景中，也有一些实时性要求不高\(可以接受多秒的延迟\)，但是查询复杂性却很高的场景。举个例子，在电商的WMS系统中，或者在大多数业务场景丰富的CRM或者客服系统中，可能需要提供几十个字段的随意组合查询功能。这种系统的数据维度天生众多，比如一个电商的WMS中对一件货物的描述，可能有下面这些字段：
 
 > 仓库id，入库时间，库位分区id，储存货架id，入库操作员id，出库操作员id，库存数量，过期时间，SKU类型，产品品牌，产品分类，内件数量
 
@@ -26,38 +26,38 @@ Elasticsearch是开源分布式搜索引擎的霸主，其依赖于Lucene实现�
 
 虽然es是针对搜索场景来定制的，但如前文所言，实际应用中常常用es来作为database来使用，就是因为倒排列表的特性。可以用比较朴素的观点来理解倒排索引：
 
-![posting-list](../images/ch6-posting_list.png)
+![posting-list](../.gitbook/assets/ch6-posting_list.png)
 
-*图 6-10 倒排列表*
+_图 6-10 倒排列表_
 
 对Elasticsearch中的数据进行查询时，本质就是求多个排好序的序列求交集。非数值类型字段涉及到分词问题，大多数内部使用场景下，我们可以直接使用默认的bi-gram分词。什么是bi-gram分词呢：
 
 即将所有`Ti`和`T(i+1)`组成一个词（在Elasticsearch中叫term），然后再编排其倒排列表，这样我们的倒排列表大概就是这样的：
 
-![terms](../images/ch6-terms.png)
+![terms](../.gitbook/assets/ch6-terms.png)
 
-*图 6-11 “今天天气很好”的分词结果*
+_图 6-11 “今天天气很好”的分词结果_
 
 当用户搜索'天气很好'时，其实就是求：天气、气很、很好三组倒排列表的交集，但这里的相等判断逻辑有些特殊，用伪代码表示一下：
 
 ```go
 func equal() {
-	if postEntry.docID of '天气' == postEntry.docID of '气很' &&
-		postEntry.offset + 1 of '天气' == postEntry.offset of '气很' {
-			return true
-	}
+    if postEntry.docID of '天气' == postEntry.docID of '气很' &&
+        postEntry.offset + 1 of '天气' == postEntry.offset of '气很' {
+            return true
+    }
 
-	if postEntry.docID of '气很' == postEntry.docID of '很好' &&
-		postEntry.offset + 1 of '气很' == postEntry.offset of '很好' {
-		return true
-	}
+    if postEntry.docID of '气很' == postEntry.docID of '很好' &&
+        postEntry.offset + 1 of '气很' == postEntry.offset of '很好' {
+        return true
+    }
 
-	if postEntry.docID of '天气' == postEntry.docID of '很好' &&
-		postEntry.offset + 2 of '天气' == postEntry.offset of '很好' {
-		return true
-	}
+    if postEntry.docID of '天气' == postEntry.docID of '很好' &&
+        postEntry.offset + 2 of '天气' == postEntry.offset of '很好' {
+        return true
+    }
 
-	return false
+    return false
 }
 ```
 
@@ -71,7 +71,7 @@ func equal() {
 
 es定义了一套查询DSL，当我们把es当数据库使用时，需要用到其bool查询。举个例子：
 
-```json
+```javascript
 {
   "query": {
     "bool": {
@@ -126,7 +126,7 @@ if field_1 == 1 && field_2 == 2 && field_3 == 3 && field_4 == 4 {
 
 用bool should query可以表示or的逻辑：
 
-```json
+```javascript
 {
   "query": {
     "bool": {
@@ -159,7 +159,7 @@ if field_1 == 1 && field_2 == 2 && field_3 == 3 && field_4 == 4 {
 
 ```go
 if field_1 == 1 || field_2 == 2 {
-	return true
+    return true
 }
 ```
 
@@ -181,21 +181,21 @@ es的`Bool Query`方案，就是用json来表达了这种程序语言中的Boole
 // 选用 elastic 版本时
 // 注意与自己使用的 elasticsearch 要对应
 import (
-	elastic "gopkg.in/olivere/elastic.v3"
+    elastic "gopkg.in/olivere/elastic.v3"
 )
 
 var esClient *elastic.Client
 
 func initElasticsearchClient(host string, port string) {
-	var err error
-	esClient, err = elastic.NewClient(
-		elastic.SetURL(fmt.Sprintf("http://%s:%s", host, port)),
-		elastic.SetMaxRetries(3),
-	)
+    var err error
+    esClient, err = elastic.NewClient(
+        elastic.SetURL(fmt.Sprintf("http://%s:%s", host, port)),
+        elastic.SetMaxRetries(3),
+    )
 
-	if err != nil {
-		// log error
-	}
+    if err != nil {
+        // log error
+    }
 }
 ```
 
@@ -204,24 +204,24 @@ func initElasticsearchClient(host string, port string) {
 ```go
 func insertDocument(db string, table string, obj map[string]interface{}) {
 
-	id := obj["id"]
+    id := obj["id"]
 
-	var indexName, typeName string
-	// 数据库中的 database/table 概念，可以简单映射到 es 的 index 和 type
-	// 不过需要注意，因为 es 中的 _type 本质上只是 document 的一个字段
-	// 所以单个 index 内容过多会导致性能问题
-	// 在新版本中 type 已经废弃
-	// 为了让不同表的数据落入不同的 index，这里我们用 table+name 作为 index 的名字
-	indexName = fmt.Sprintf("%v_%v", db, table)
-	typeName = table
+    var indexName, typeName string
+    // 数据库中的 database/table 概念，可以简单映射到 es 的 index 和 type
+    // 不过需要注意，因为 es 中的 _type 本质上只是 document 的一个字段
+    // 所以单个 index 内容过多会导致性能问题
+    // 在新版本中 type 已经废弃
+    // 为了让不同表的数据落入不同的 index，这里我们用 table+name 作为 index 的名字
+    indexName = fmt.Sprintf("%v_%v", db, table)
+    typeName = table
 
-	// 正常情况
-	res, err := esClient.Index().Index(indexName).Type(typeName).Id(id).BodyJson(obj).Do()
-	if err != nil {
-		// handle error
-	} else {
-		// insert success
-	}
+    // 正常情况
+    res, err := esClient.Index().Index(indexName).Type(typeName).Id(id).BodyJson(obj).Do()
+    if err != nil {
+        // handle error
+    } else {
+        // insert success
+    }
 }
 ```
 
@@ -229,23 +229,23 @@ func insertDocument(db string, table string, obj map[string]interface{}) {
 
 ```go
 func query(indexName string, typeName string) (*elastic.SearchResult, error) {
-	// 通过 bool must 和 bool should 添加 bool 查询条件
-	q := elastic.NewBoolQuery().Must(elastic.NewMatchPhraseQuery("id", 1),
-	elastic.NewBoolQuery().Must(elastic.NewMatchPhraseQuery("male", "m")))
+    // 通过 bool must 和 bool should 添加 bool 查询条件
+    q := elastic.NewBoolQuery().Must(elastic.NewMatchPhraseQuery("id", 1),
+    elastic.NewBoolQuery().Must(elastic.NewMatchPhraseQuery("male", "m")))
 
-	q = q.Should(
-		elastic.NewMatchPhraseQuery("name", "alex"),
-		elastic.NewMatchPhraseQuery("name", "xargin"),
-	)
+    q = q.Should(
+        elastic.NewMatchPhraseQuery("name", "alex"),
+        elastic.NewMatchPhraseQuery("name", "xargin"),
+    )
 
-	searchService := esClient.Search(indexName).Type(typeName)
-	res, err := searchService.Query(q).Do()
-	if err != nil {
-		// log error
-		return nil, err
-	}
+    searchService := esClient.Search(indexName).Type(typeName)
+    res, err := searchService.Query(q).Do()
+    if err != nil {
+        // log error
+        return nil, err
+    }
 
-	return res, nil
+    return res, nil
 }
 ```
 
@@ -253,22 +253,22 @@ func query(indexName string, typeName string) (*elastic.SearchResult, error) {
 
 ```go
 func deleteDocument(
-	indexName string, typeName string, obj map[string]interface{},
+    indexName string, typeName string, obj map[string]interface{},
 ) {
-	id := obj["id"]
+    id := obj["id"]
 
-	res, err := esClient.Delete().Index(indexName).Type(typeName).Id(id).Do()
-	if err != nil {
-		// handle error
-	} else {
-		// delete success
-	}
+    res, err := esClient.Delete().Index(indexName).Type(typeName).Id(id).Do()
+    if err != nil {
+        // handle error
+    } else {
+        // delete success
+    }
 }
 ```
 
-因为Lucene的性质，本质上搜索引擎内的数据是不可变的，所以如果要对文档进行更新，Lucene内部是按照id进行完全覆盖(本质是取同一 id 最新的segment中的数据)的操作，所以与插入的情况是一样的。
+因为Lucene的性质，本质上搜索引擎内的数据是不可变的，所以如果要对文档进行更新，Lucene内部是按照id进行完全覆盖\(本质是取同一 id 最新的segment中的数据\)的操作，所以与插入的情况是一样的。
 
-使用es作为数据库使用时，需要注意，因为es有索引合并的操作，所以数据插入到es中到可以查询的到需要一段时间（由es的refresh_interval决定）。所以千万不要把es当成强一致的关系型数据库来使用。
+使用es作为数据库使用时，需要注意，因为es有索引合并的操作，所以数据插入到es中到可以查询的到需要一段时间（由es的refresh\_interval决定）。所以千万不要把es当成强一致的关系型数据库来使用。
 
 ### 将 sql 转换为 DSL
 
@@ -276,13 +276,13 @@ func deleteDocument(
 
 ```sql
 select * from xxx where user_id = 1 and (
-	product_id = 1 and (star_num = 4 or star_num = 5) and banned = 1
+    product_id = 1 and (star_num = 4 or star_num = 5) and banned = 1
 )
 ```
 
 写成es的DSL是如下形式：
 
-```json
+```javascript
 {
   "query": {
     "bool": {
@@ -347,9 +347,9 @@ SQL的where部分就是boolean expression。我们之前提到过，这种bool�
 
 当然可以，我们把SQL的where被Parse之后的结构和es的DSL的结构做个对比：
 
-![ast](../images/ch6-ast-dsl.png)
+![ast](../.gitbook/assets/ch6-ast-dsl.png)
 
-*图 6-12 AST和DSL之间的对应关系*
+_图 6-12 AST和DSL之间的对应关系_
 
 既然结构上完全一致，逻辑上我们就可以相互转换。我们以广度优先对AST树进行遍历，然后将二元表达式转换成json字符串，再拼装起来就可以了，限于篇幅，本文中就不给出示例了，读者朋友可以查看：
 
@@ -365,9 +365,9 @@ SQL的where部分就是boolean expression。我们之前提到过，这种bool�
 
 ### 通过时间戳进行增量数据同步
 
-![sync to es](../images/ch6-sync.png)
+![sync to es](../.gitbook/assets/ch6-sync.png)
 
-*图 6-13 基于时间戳的数据同步*
+_图 6-13 基于时间戳的数据同步_
 
 这种同步方式与业务强绑定，例如WMS系统中的出库单，我们并不需要非常实时，稍微有延迟也可以接受，那么我们可以每分钟从MySQL的出库单表中，把最近十分钟创建的所有出库单取出，批量存入es中，取数据的操作需要执行的逻辑可以表达为下面的SQL：
 
@@ -379,20 +379,21 @@ select * from wms_orders where update_time >= date_sub(now(), interval 10 minute
 
 ```sql
 select * from wms_orders where update_time >= date_sub(
-	now(), interval 11 minute
+    now(), interval 11 minute
 );
 ```
 
-取最近11分钟有变动的数据覆盖更新到es中。这种方案的缺点显而易见，我们必须要求业务数据严格遵守一定的规范。比如这里的，必须要有update_time字段，并且每次创建和更新都要保证该字段有正确的时间值。否则我们的同步逻辑就会丢失数据。
+取最近11分钟有变动的数据覆盖更新到es中。这种方案的缺点显而易见，我们必须要求业务数据严格遵守一定的规范。比如这里的，必须要有update\_time字段，并且每次创建和更新都要保证该字段有正确的时间值。否则我们的同步逻辑就会丢失数据。
 
 ### 通过 binlog 进行数据同步
 
-![binlog-sync](../images/ch6-binlog-sync.png)
+![binlog-sync](../.gitbook/assets/ch6-binlog-sync.png)
 
-*图 6-13 基于binlog的数据同步*
+_图 6-13 基于binlog的数据同步_
 
 业界使用较多的是阿里开源的Canal，来进行binlog解析与同步。canal会伪装成MySQL的从库，然后解析好行格式的binlog，再以更容易解析的格式（例如json）发送到消息队列。
 
 由下游的Kafka消费者负责把上游数据表的自增主键作为es的文档的id进行写入，这样可以保证每次接收到binlog时，对应id的数据都被覆盖更新为最新。MySQL的Row格式的binlog会将每条记录的所有字段都提供给下游，所以在向异构数据目标同步数据时，不需要考虑数据是插入还是更新，只要一律按id进行覆盖即可。
 
 这种模式同样需要业务遵守一条数据表规范，即表中必须有唯一主键id来保证我们进入es的数据不会发生重复。一旦不遵守该规范，那么就会在同步时导致数据重复。当然，你也可以为每一张需要的表去定制消费者的逻辑，这就不是通用系统讨论的范畴了。
+

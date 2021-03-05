@@ -8,11 +8,11 @@ Go语言的RPC库最简单的使用方式是通过`Client.Call`方法进行同�
 
 ```go
 func (client *Client) Call(
-	serviceMethod string, args interface{},
-	reply interface{},
+    serviceMethod string, args interface{},
+    reply interface{},
 ) error {
-	call := <-client.Go(serviceMethod, args, reply, make(chan *Call, 1)).Done
-	return call.Error
+    call := <-client.Go(serviceMethod, args, reply, make(chan *Call, 1)).Done
+    return call.Error
 }
 ```
 
@@ -22,18 +22,18 @@ func (client *Client) Call(
 
 ```go
 func doClientWork(client *rpc.Client) {
-	helloCall := client.Go("HelloService.Hello", "hello", new(string), nil)
+    helloCall := client.Go("HelloService.Hello", "hello", new(string), nil)
 
-	// do some thing
+    // do some thing
 
-	helloCall = <-helloCall.Done
-	if err := helloCall.Error; err != nil {
-		log.Fatal(err)
-	}
+    helloCall = <-helloCall.Done
+    if err := helloCall.Error; err != nil {
+        log.Fatal(err)
+    }
 
-	args := helloCall.Args.(string)
-	reply := helloCall.Reply.(string)
-	fmt.Println(args, reply)
+    args := helloCall.Args.(string)
+    reply := helloCall.Reply.(string)
+    fmt.Println(args, reply)
 }
 ```
 
@@ -43,18 +43,18 @@ func doClientWork(client *rpc.Client) {
 
 ```go
 func (client *Client) Go(
-	serviceMethod string, args interface{},
-	reply interface{},
-	done chan *Call,
+    serviceMethod string, args interface{},
+    reply interface{},
+    done chan *Call,
 ) *Call {
-	call := new(Call)
-	call.ServiceMethod = serviceMethod
-	call.Args = args
-	call.Reply = reply
-	call.Done = make(chan *Call, 10) // buffered.
+    call := new(Call)
+    call.ServiceMethod = serviceMethod
+    call.Args = args
+    call.Reply = reply
+    call.Done = make(chan *Call, 10) // buffered.
 
-	client.send(call)
-	return call
+    client.send(call)
+    return call
 }
 ```
 
@@ -64,13 +64,13 @@ func (client *Client) Go(
 
 ```go
 func (call *Call) done() {
-	select {
-	case call.Done <- call:
-		// ok
-	default:
-		// We don't want to block here. It is the caller's responsibility to make
-		// sure the channel has enough buffer space. See comment in Go().
-	}
+    select {
+    case call.Done <- call:
+        // ok
+    default:
+        // We don't want to block here. It is the caller's responsibility to make
+        // sure the channel has enough buffer space. See comment in Go().
+    }
 }
 ```
 
@@ -84,16 +84,16 @@ func (call *Call) done() {
 
 ```go
 type KVStoreService struct {
-	m      map[string]string
-	filter map[string]func(key string)
-	mu     sync.Mutex
+    m      map[string]string
+    filter map[string]func(key string)
+    mu     sync.Mutex
 }
 
 func NewKVStoreService() *KVStoreService {
-	return &KVStoreService{
-		m:      make(map[string]string),
-		filter: make(map[string]func(key string)),
-	}
+    return &KVStoreService{
+        m:      make(map[string]string),
+        filter: make(map[string]func(key string)),
+    }
 }
 ```
 
@@ -103,31 +103,31 @@ func NewKVStoreService() *KVStoreService {
 
 ```go
 func (p *KVStoreService) Get(key string, value *string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+    p.mu.Lock()
+    defer p.mu.Unlock()
 
-	if v, ok := p.m[key]; ok {
-		*value = v
-		return nil
-	}
+    if v, ok := p.m[key]; ok {
+        *value = v
+        return nil
+    }
 
-	return fmt.Errorf("not found")
+    return fmt.Errorf("not found")
 }
 
 func (p *KVStoreService) Set(kv [2]string, reply *struct{}) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+    p.mu.Lock()
+    defer p.mu.Unlock()
 
-	key, value := kv[0], kv[1]
+    key, value := kv[0], kv[1]
 
-	if oldValue := p.m[key]; oldValue != value {
-		for _, fn := range p.filter {
-			fn(key)
-		}
-	}
+    if oldValue := p.m[key]; oldValue != value {
+        for _, fn := range p.filter {
+            fn(key)
+        }
+    }
 
-	p.m[key] = value
-	return nil
+    p.m[key] = value
+    return nil
 }
 ```
 
@@ -137,22 +137,22 @@ func (p *KVStoreService) Set(kv [2]string, reply *struct{}) error {
 
 ```go
 func (p *KVStoreService) Watch(timeoutSecond int, keyChanged *string) error {
-	id := fmt.Sprintf("watch-%s-%03d", time.Now(), rand.Int())
-	ch := make(chan string, 10) // buffered
+    id := fmt.Sprintf("watch-%s-%03d", time.Now(), rand.Int())
+    ch := make(chan string, 10) // buffered
 
-	p.mu.Lock()
-	p.filter[id] = func(key string) { ch <- key }
-	p.mu.Unlock()
+    p.mu.Lock()
+    p.filter[id] = func(key string) { ch <- key }
+    p.mu.Unlock()
 
-	select {
-	case <-time.After(time.Duration(timeoutSecond) * time.Second):
-		return fmt.Errorf("timeout")
-	case key := <-ch:
-		*keyChanged = key
-		return nil
-	}
+    select {
+    case <-time.After(time.Duration(timeoutSecond) * time.Second):
+        return fmt.Errorf("timeout")
+    case key := <-ch:
+        *keyChanged = key
+        return nil
+    }
 
-	return nil
+    return nil
 }
 ```
 
@@ -162,24 +162,24 @@ KVStoreService服务的注册和启动过程我们不再赘述。下面我们看
 
 ```go
 func doClientWork(client *rpc.Client) {
-	go func() {
-		var keyChanged string
-		err := client.Call("KVStoreService.Watch", 30, &keyChanged)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("watch:", keyChanged)
-	} ()
+    go func() {
+        var keyChanged string
+        err := client.Call("KVStoreService.Watch", 30, &keyChanged)
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println("watch:", keyChanged)
+    } ()
 
-	err := client.Call(
-		"KVStoreService.Set", [2]string{"abc", "abc-value"},
-		new(struct{}),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+    err := client.Call(
+        "KVStoreService.Set", [2]string{"abc", "abc-value"},
+        new(struct{}),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	time.Sleep(time.Second*3)
+    time.Sleep(time.Second*3)
 }
 ```
 
@@ -193,18 +193,18 @@ func doClientWork(client *rpc.Client) {
 
 ```go
 func main() {
-	rpc.Register(new(HelloService))
+    rpc.Register(new(HelloService))
 
-	for {
-		conn, _ := net.Dial("tcp", "localhost:1234")
-		if conn == nil {
-			time.Sleep(time.Second)
-			continue
-		}
+    for {
+        conn, _ := net.Dial("tcp", "localhost:1234")
+        if conn == nil {
+            time.Sleep(time.Second)
+            continue
+        }
 
-		rpc.ServeConn(conn)
-		conn.Close()
-	}
+        rpc.ServeConn(conn)
+        conn.Close()
+    }
 }
 ```
 
@@ -214,25 +214,25 @@ func main() {
 
 ```go
 func main() {
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal("ListenTCP error:", err)
-	}
+    listener, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal("ListenTCP error:", err)
+    }
 
-	clientChan := make(chan *rpc.Client)
+    clientChan := make(chan *rpc.Client)
 
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Fatal("Accept error:", err)
-			}
+    go func() {
+        for {
+            conn, err := listener.Accept()
+            if err != nil {
+                log.Fatal("Accept error:", err)
+            }
 
-			clientChan <- rpc.NewClient(conn)
-		}
-	}()
+            clientChan <- rpc.NewClient(conn)
+        }
+    }()
 
-	doClientWork(clientChan)
+    doClientWork(clientChan)
 }
 ```
 
@@ -242,21 +242,20 @@ func main() {
 
 ```go
 func doClientWork(clientChan <-chan *rpc.Client) {
-	client := <-clientChan
-	defer client.Close()
+    client := <-clientChan
+    defer client.Close()
 
-	var reply string
-	err = client.Call("HelloService.Hello", "hello", &reply)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var reply string
+    err = client.Call("HelloService.Hello", "hello", &reply)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	fmt.Println(reply)
+    fmt.Println(reply)
 }
 ```
 
 首先从管道去取一个RPC客户端对象，并且通过defer语句指定在函数退出前关闭客户端。然后是执行正常的RPC调用。
-
 
 ## 4.3.4 上下文信息
 
@@ -266,7 +265,7 @@ func doClientWork(clientChan <-chan *rpc.Client) {
 
 ```go
 type HelloService struct {
-	conn net.Conn
+    conn net.Conn
 }
 ```
 
@@ -274,25 +273,25 @@ type HelloService struct {
 
 ```go
 func main() {
-	listener, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal("ListenTCP error:", err)
-	}
+    listener, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal("ListenTCP error:", err)
+    }
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Fatal("Accept error:", err)
-		}
+    for {
+        conn, err := listener.Accept()
+        if err != nil {
+            log.Fatal("Accept error:", err)
+        }
 
-		go func() {
-			defer conn.Close()
+        go func() {
+            defer conn.Close()
 
-			p := rpc.NewServer()
-			p.Register(&HelloService{conn: conn})
-			p.ServeConn(conn)
-		} ()
-	}
+            p := rpc.NewServer()
+            p.Register(&HelloService{conn: conn})
+            p.ServeConn(conn)
+        } ()
+    }
 }
 ```
 
@@ -300,8 +299,8 @@ Hello方法中就可以根据conn成员识别不同链接的RPC调用：
 
 ```go
 func (p *HelloService) Hello(request string, reply *string) error {
-	*reply = "hello:" + request + ", from" + p.conn.RemoteAddr().String()
-	return nil
+    *reply = "hello:" + request + ", from" + p.conn.RemoteAddr().String()
+    return nil
 }
 ```
 
@@ -309,26 +308,27 @@ func (p *HelloService) Hello(request string, reply *string) error {
 
 ```go
 type HelloService struct {
-	conn    net.Conn
-	isLogin bool
+    conn    net.Conn
+    isLogin bool
 }
 
 func (p *HelloService) Login(request string, reply *string) error {
-	if request != "user:password" {
-		return fmt.Errorf("auth failed")
-	}
-	log.Println("login ok")
-	p.isLogin = true
-	return nil
+    if request != "user:password" {
+        return fmt.Errorf("auth failed")
+    }
+    log.Println("login ok")
+    p.isLogin = true
+    return nil
 }
 
 func (p *HelloService) Hello(request string, reply *string) error {
-	if !p.isLogin {
-		return fmt.Errorf("please login")
-	}
-	*reply = "hello:" + request + ", from" + p.conn.RemoteAddr().String()
-	return nil
+    if !p.isLogin {
+        return fmt.Errorf("please login")
+    }
+    *reply = "hello:" + request + ", from" + p.conn.RemoteAddr().String()
+    return nil
 }
 ```
 
 这样可以要求在客户端链接RPC服务时，首先要执行登陆操作，登陆成功后才能正常执行其他的服务。
+

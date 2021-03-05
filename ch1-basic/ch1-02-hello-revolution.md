@@ -2,9 +2,9 @@
 
 在创世纪章节中我们简单介绍了Go语言的演化基因族谱，对其中来自于贝尔实验室的特有并发编程基因做了重点介绍，最后引出了Go语言版的“Hello, World”程序。其实“Hello, World”程序是展示各种语言特性的最好的例子，是通向该语言的一个窗口。这一节我们将沿着各个编程语言演化的时间轴，简单回顾下“Hello, World”程序是如何逐步演化到目前的Go语言形式、最终完成它的革命使命的。
 
-![](../images/ch1-4-go-history.png)
+![](../.gitbook/assets/ch1-4-go-history.png)
 
-*图 1-4 Go语言并发演化历史*
+_图 1-4 Go语言并发演化历史_
 
 ## 1.2.1 B语言 - Ken Thompson, 1972
 
@@ -14,9 +14,9 @@
 
 ```c
 main() {
-	extrn a, b, c;
-	putchar(a); putchar(b); putchar(c);
-	putchar('!*n');
+    extrn a, b, c;
+    putchar(a); putchar(b); putchar(c);
+    putchar('!*n');
 }
 a 'hell';
 b 'o, w';
@@ -36,7 +36,7 @@ C语言是由Dennis Ritchie在B语言的基础上改进而来，它增加了丰�
 ```c
 main()
 {
-	printf("hello, world");
+    printf("hello, world");
 }
 ```
 
@@ -47,7 +47,7 @@ main()
 ```c
 main()
 {
-	printf("hello, world\n");
+    printf("hello, world\n");
 }
 ```
 
@@ -60,7 +60,7 @@ main()
 
 main()
 {
-	printf("hello, world\n");
+    printf("hello, world\n");
 }
 ```
 
@@ -71,12 +71,11 @@ main()
 
 main(void)
 {
-	printf("hello, world\n");
+    printf("hello, world\n");
 }
 ```
 
 至此，C语言本身的进化基本完成。后面的C92/C99/C11都只是针对一些语言细节做了完善。因为各种历史因素，C89依然是使用最广泛的标准。
-
 
 ## 1.2.3 Newsqueak - Rob Pike, 1989
 
@@ -90,50 +89,50 @@ print("Hello,", "World", "\n");
 
 从上面的程序中，除了猜测`print`函数可以支持多个参数外，我们很难看到Newsqueak语言相关的特性。由于Newsqueak语言和Go语言相关的特性主要是并发和管道。因此，我们这里通过一个并发版本的“素数筛”算法来略窥Newsqueak语言的特性。“素数筛”的原理如图：
 
-![](../images/ch1-5-prime-sieve.png)
+![](../.gitbook/assets/ch1-5-prime-sieve.png)
 
-*图 1-5 素数筛*
+_图 1-5 素数筛_
 
 Newsqueak语言并发版本的“素数筛”程序如下：
 
 ```go
 // 向管道输出从2开始的自然数序列
 counter := prog(c:chan of int) {
-	i := 2;
-	for(;;) {
-		c <-= i++;
-	}
+    i := 2;
+    for(;;) {
+        c <-= i++;
+    }
 };
 
 // 针对listen管道获取的数列，过滤掉是prime倍数的数
 // 新的序列输出到send管道
 filter := prog(prime:int, listen, send:chan of int) {
-	i:int;
-	for(;;) {
-		if((i = <-listen)%prime) {
-			send <-= i;
-		}
-	}
+    i:int;
+    for(;;) {
+        if((i = <-listen)%prime) {
+            send <-= i;
+        }
+    }
 };
 
 // 主函数
 // 每个管道第一个流出的数必然是素数
 // 然后基于这个新的素数构建新的素数过滤器
 sieve := prog() of chan of int {
-	c := mk(chan of int);
-	begin counter(c);
-	prime := mk(chan of int);
-	begin prog(){
-		p:int;
-		newc:chan of int;
-		for(;;){
-			prime <-= p =<- c;
-			newc = mk();
-			begin filter(p, c, newc);
-			c = newc;
-		}
-	}();
-	become prime;
+    c := mk(chan of int);
+    begin counter(c);
+    prime := mk(chan of int);
+    begin prog(){
+        p:int;
+        newc:chan of int;
+        for(;;){
+            prime <-= p =<- c;
+            newc = mk();
+            begin filter(p, c, newc);
+            c = newc;
+        }
+    }();
+    become prime;
 };
 
 // 启动素数筛
@@ -150,9 +149,9 @@ Newsqueak语言中并发体和管道的语法和Go语言已经比较接近了，
 
 由于Alef语言同时支持进程和线程并发体，而且在并发体中可以再次启动更多的并发体，导致了Alef的并发状态会异常复杂。同时Alef没有自动垃圾回收机制（Alef因为保留的C语言灵活的指针特性，也导致了自动垃圾回收机制实现比较困难），各种资源充斥于不同的线程和进程之间，导致并发体的内存资源管理异常复杂。Alef语言全部继承了C语言的语法，可以认为是增强了并发语法的C语言。下图是Alef语言文档中展示的一个可能的并发体状态：
 
-![](../images/ch1-6-alef.png)
+![](../.gitbook/assets/ch1-6-alef.png)
 
-*图 1-6 Alef并发模型*
+_图 1-6 Alef并发模型_
 
 Alef语言并发版本的“Hello World”程序如下：
 
@@ -160,21 +159,21 @@ Alef语言并发版本的“Hello World”程序如下：
 #include <alef.h>
 
 void receive(chan(byte*) c) {
-	byte *s;
-	s = <- c;
-	print("%s\n", s);
-	terminate(nil);
+    byte *s;
+    s = <- c;
+    print("%s\n", s);
+    terminate(nil);
 }
 
 void main(void) {
-	chan(byte*) c;
-	alloc c;
-	proc receive(c);
-	task receive(c);
-	c <- = "hello proc or task";
-	c <- = "hello proc or task";
-	print("done\n");
-	terminate(nil);
+    chan(byte*) c;
+    alloc c;
+    proc receive(c);
+    task receive(c);
+    c <- = "hello proc or task";
+    c <- = "hello proc or task";
+    print("done\n");
+    terminate(nil);
 }
 ```
 
@@ -196,13 +195,13 @@ include "draw.m";
 
 Hello: module
 {
-	init: fn(ctxt: ref Draw->Context, args: list of string);
+    init: fn(ctxt: ref Draw->Context, args: list of string);
 };
 
 init(ctxt: ref Draw->Context, args: list of string)
 {
-	sys = load Sys Sys->PATH;
-	sys->print("hello, world\n");
+    sys = load Sys Sys->PATH;
+    sys->print("hello, world\n");
 }
 ```
 
@@ -218,8 +217,8 @@ init(ctxt: ref Draw->Context, args: list of string)
 package main
 
 func main() int {
-	print "hello, world\n";
-	return 0;
+    print "hello, world\n";
+    return 0;
 }
 ```
 
@@ -231,7 +230,7 @@ func main() int {
 package main
 
 func main() {
-	print "hello, world\n";
+    print "hello, world\n";
 }
 ```
 
@@ -243,7 +242,7 @@ func main() {
 package main
 
 func main() {
-	print("hello, world\n");
+    print("hello, world\n");
 }
 ```
 
@@ -257,7 +256,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.printf("hello, world\n");
+    fmt.printf("hello, world\n");
 }
 ```
 
@@ -271,7 +270,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("hello, world\n");
+    fmt.Printf("hello, world\n");
 }
 ```
 
@@ -285,12 +284,11 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("hello, world\n")
+    fmt.Printf("hello, world\n")
 }
 ```
 
 Go语言终于移除了语句末尾的分号。这是Go语言在2009年11月10号正式开源之后第一个比较重要的语法改进。从1978年C语言教程第一版引入的分号分割的规则到现在，Go语言的作者们花了整整32年终于移除了语句末尾的分号。在这32年的演化的过程中必然充满了各种八卦故事，我想这一定是Go语言设计者深思熟虑的结果（现在Swift等新的语言也是默认忽略分号的，可见分号确实并不是那么的重要）。
-
 
 ## 1.2.7 你好, 世界! - V2.0
 
@@ -300,25 +298,26 @@ Go语言终于移除了语句末尾的分号。这是Go语言在2009年11月10�
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"time"
+    "fmt"
+    "log"
+    "net/http"
+    "time"
 )
 
 func main() {
-	fmt.Println("Please visit http://127.0.0.1:12345/")
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		s := fmt.Sprintf("你好, 世界! -- Time: %s", time.Now().String())
-		fmt.Fprintf(w, "%v\n", s)
-		log.Printf("%v\n", s)
-	})
-	if err := http.ListenAndServe(":12345", nil); err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+    fmt.Println("Please visit http://127.0.0.1:12345/")
+    http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+        s := fmt.Sprintf("你好, 世界! -- Time: %s", time.Now().String())
+        fmt.Fprintf(w, "%v\n", s)
+        log.Printf("%v\n", s)
+    })
+    if err := http.ListenAndServe(":12345", nil); err != nil {
+        log.Fatal("ListenAndServe: ", err)
+    }
 }
 ```
 
 我们通过Go语言标准库自带的`net/http`包构造了一个独立运行的http服务。其中`http.HandleFunc("/", ...)`针对`/`根路径请求注册了响应处理函数。在响应处理函数中，我们依然使用`fmt.Fprintf`格式化输出函数实现了通过http协议向请求的客户端打印格式化的字符串，同时通过标准库的日志包在服务器端也打印相关字符串。最后通过`http.ListenAndServe`函数调用来启动http服务。
 
 至此，Go语言终于完成了从单机单核时代的C语言到21世纪互联网时代多核环境的通用编程语言的蜕变。
+

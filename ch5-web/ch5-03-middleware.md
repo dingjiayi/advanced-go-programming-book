@@ -1,6 +1,6 @@
 # 5.3 中间件
 
-本章将对现在流行的Web框架中的中间件(middleware)技术原理进行分析，并介绍如何使用中间件技术将业务和非业务代码功能进行解耦。
+本章将对现在流行的Web框架中的中间件\(middleware\)技术原理进行分析，并介绍如何使用中间件技术将业务和非业务代码功能进行解耦。
 
 ## 5.3.1 代码泥潭
 
@@ -11,13 +11,13 @@
 package main
 
 func hello(wr http.ResponseWriter, r *http.Request) {
-	wr.Write([]byte("hello"))
+    wr.Write([]byte("hello"))
 }
 
 func main() {
-	http.HandleFunc("/", hello)
-	err := http.ListenAndServe(":8080", nil)
-	...
+    http.HandleFunc("/", hello)
+    err := http.ListenAndServe(":8080", nil)
+    ...
 }
 ```
 
@@ -30,10 +30,10 @@ func main() {
 var logger = log.New(os.Stdout, "", 0)
 
 func hello(wr http.ResponseWriter, r *http.Request) {
-	timeStart := time.Now()
-	wr.Write([]byte("hello"))
-	timeElapsed := time.Since(timeStart)
-	logger.Println(timeElapsed)
+    timeStart := time.Now()
+    wr.Write([]byte("hello"))
+    timeElapsed := time.Since(timeStart)
+    logger.Println(timeElapsed)
 }
 ```
 
@@ -47,32 +47,31 @@ func hello(wr http.ResponseWriter, r *http.Request) {
 package main
 
 func helloHandler(wr http.ResponseWriter, r *http.Request) {
-	// ...
+    // ...
 }
 
 func showInfoHandler(wr http.ResponseWriter, r *http.Request) {
-	// ...
+    // ...
 }
 
 func showEmailHandler(wr http.ResponseWriter, r *http.Request) {
-	// ...
+    // ...
 }
 
 func showFriendsHandler(wr http.ResponseWriter, r *http.Request) {
-	timeStart := time.Now()
-	wr.Write([]byte("your friends is tom and alex"))
-	timeElapsed := time.Since(timeStart)
-	logger.Println(timeElapsed)
+    timeStart := time.Now()
+    wr.Write([]byte("your friends is tom and alex"))
+    timeElapsed := time.Since(timeStart)
+    logger.Println(timeElapsed)
 }
 
 func main() {
-	http.HandleFunc("/", helloHandler)
-	http.HandleFunc("/info/show", showInfoHandler)
-	http.HandleFunc("/email/show", showEmailHandler)
-	http.HandleFunc("/friends/show", showFriendsHandler)
-	// ...
+    http.HandleFunc("/", helloHandler)
+    http.HandleFunc("/info/show", showInfoHandler)
+    http.HandleFunc("/email/show", showEmailHandler)
+    http.HandleFunc("/friends/show", showFriendsHandler)
+    // ...
 }
-
 ```
 
 每一个handler里都有之前提到的记录运行时间的代码，每次增加新的路由我们也同样需要把这些看起来长得差不多的代码拷贝到我们需要的地方去。因为代码不太多，所以实施起来也没有遇到什么大问题。
@@ -83,12 +82,12 @@ func main() {
 
 ```go
 func helloHandler(wr http.ResponseWriter, r *http.Request) {
-	timeStart := time.Now()
-	wr.Write([]byte("hello"))
-	timeElapsed := time.Since(timeStart)
-	logger.Println(timeElapsed)
-	// 新增耗时上报
-	metrics.Upload("timeHandler", timeElapsed)
+    timeStart := time.Now()
+    wr.Write([]byte("hello"))
+    timeElapsed := time.Since(timeStart)
+    logger.Println(timeElapsed)
+    // 新增耗时上报
+    metrics.Upload("timeHandler", timeElapsed)
 }
 ```
 
@@ -101,27 +100,26 @@ func helloHandler(wr http.ResponseWriter, r *http.Request) {
 我们犯的最大的错误，是把业务代码和非业务代码揉在了一起。对于大多数的场景来讲，非业务的需求都是在http请求处理前做一些事情，并且在响应完成之后做一些事情。我们有没有办法使用一些重构思路把这些公共的非业务功能代码剥离出去呢？回到刚开头的例子，我们需要给我们的`helloHandler()`增加超时时间统计，我们可以使用一种叫`function adapter`的方法来对`helloHandler()`进行包装：
 
 ```go
-
 func hello(wr http.ResponseWriter, r *http.Request) {
-	wr.Write([]byte("hello"))
+    wr.Write([]byte("hello"))
 }
 
 func timeMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(wr http.ResponseWriter, r *http.Request) {
-		timeStart := time.Now()
+    return http.HandlerFunc(func(wr http.ResponseWriter, r *http.Request) {
+        timeStart := time.Now()
 
-		// next handler
-		next.ServeHTTP(wr, r)
+        // next handler
+        next.ServeHTTP(wr, r)
 
-		timeElapsed := time.Since(timeStart)
-		logger.Println(timeElapsed)
-	})
+        timeElapsed := time.Since(timeStart)
+        logger.Println(timeElapsed)
+    })
 }
 
 func main() {
-	http.Handle("/", timeMiddleware(http.HandlerFunc(hello)))
-	err := http.ListenAndServe(":8080", nil)
-	...
+    http.Handle("/", timeMiddleware(http.HandlerFunc(hello)))
+    err := http.ListenAndServe(":8080", nil)
+    ...
 }
 ```
 
@@ -129,7 +127,7 @@ func main() {
 
 ```go
 type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
+    ServeHTTP(ResponseWriter, *Request)
 }
 ```
 
@@ -137,16 +135,16 @@ type Handler interface {
 
 ```go
 type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
+    ServeHTTP(ResponseWriter, *Request)
 }
 
 type HandlerFunc func(ResponseWriter, *Request)
 
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
-	f(w, r)
+    f(w, r)
 }
-
 ```
+
 只要你的handler函数签名是：
 
 ```go
@@ -159,17 +157,17 @@ func (ResponseWriter, *Request)
 h = getHandler() => h.ServeHTTP(w, r) => h(w, r)
 ```
 
-上面提到的把自定义`handler`转换为`http.HandlerFunc()`这个过程是必须的，因为我们的`handler`没有直接实现`ServeHTTP`这个接口。上面的代码中我们看到的HandleFunc(注意HandlerFunc和HandleFunc的区别)里也可以看到这个强制转换过程：
+上面提到的把自定义`handler`转换为`http.HandlerFunc()`这个过程是必须的，因为我们的`handler`没有直接实现`ServeHTTP`这个接口。上面的代码中我们看到的HandleFunc\(注意HandlerFunc和HandleFunc的区别\)里也可以看到这个强制转换过程：
 
 ```go
 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	DefaultServeMux.HandleFunc(pattern, handler)
+    DefaultServeMux.HandleFunc(pattern, handler)
 }
 
 // 调用
 
 func (mux *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	mux.Handle(pattern, HandlerFunc(handler))
+    mux.Handle(pattern, HandlerFunc(handler))
 }
 ```
 
@@ -181,28 +179,28 @@ func (mux *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *Re
 customizedHandler = logger(timeout(ratelimit(helloHandler)))
 ```
 
-这个函数链在执行过程中的上下文可以用*图 5-8*来表示。
+这个函数链在执行过程中的上下文可以用_图 5-8_来表示。
 
-![](../images/ch6-03-middleware_flow.png)
+![](../.gitbook/assets/ch6-03-middleware_flow.png)
 
-*图 5-8 请求处理过程*
+_图 5-8 请求处理过程_
 
 再直白一些，这个流程在进行请求处理的时候就是不断地进行函数压栈再出栈，有一些类似于递归的执行流：
 
-```
-[exec of logger logic]		   函数栈: []
+```text
+[exec of logger logic]           函数栈: []
 
-[exec of timeout logic]		  函数栈: [logger]
+[exec of timeout logic]          函数栈: [logger]
 
-[exec of ratelimit logic]		函数栈: [timeout/logger]
+[exec of ratelimit logic]        函数栈: [timeout/logger]
 
-[exec of helloHandler logic]	 函数栈: [ratelimit/timeout/logger]
+[exec of helloHandler logic]     函数栈: [ratelimit/timeout/logger]
 
 [exec of ratelimit logic part2]  函数栈: [timeout/logger]
 
-[exec of timeout logic part2]	函数栈: [logger]
+[exec of timeout logic part2]    函数栈: [logger]
 
-[exec of logger logic part2]	 函数栈: []
+[exec of logger logic part2]     函数栈: []
 ```
 
 功能实现了，但在上面的使用过程中我们也看到了，这种函数套函数的用法不是很美观，同时也不具备什么可读性。
@@ -229,37 +227,36 @@ r.Add("/", helloHandler)
 type middleware func(http.Handler) http.Handler
 
 type Router struct {
-	middlewareChain [] middleware
-	mux map[string] http.Handler
+    middlewareChain [] middleware
+    mux map[string] http.Handler
 }
 
 func NewRouter() *Router{
-	return &Router{}
+    return &Router{}
 }
 
 func (r *Router) Use(m middleware) {
-	r.middlewareChain = append(r.middlewareChain, m)
+    r.middlewareChain = append(r.middlewareChain, m)
 }
 
 func (r *Router) Add(route string, h http.Handler) {
-	var mergedHandler = h
+    var mergedHandler = h
 
-	for i := len(r.middlewareChain) - 1; i >= 0; i-- {
-		mergedHandler = r.middlewareChain[i](mergedHandler)
-	}
+    for i := len(r.middlewareChain) - 1; i >= 0; i-- {
+        mergedHandler = r.middlewareChain[i](mergedHandler)
+    }
 
-	r.mux[route] = mergedHandler
+    r.mux[route] = mergedHandler
 }
 ```
 
 注意代码中的`middleware`数组遍历顺序，和用户希望的调用顺序应该是"相反"的。应该不难理解。
 
-
 ## 5.3.4 哪些事情适合在中间件中做
 
 以较流行的开源Go语言框架chi为例：
 
-```
+```text
 compress.go
   => 对http的响应体进行压缩处理
 heartbeat.go
@@ -280,11 +277,11 @@ throttler.go
 
 每一个Web框架都会有对应的中间件组件，如果你有兴趣，也可以向这些项目贡献有用的中间件，只要合理一般项目的维护人也愿意合并你的Pull Request。
 
-比如开源界很火的gin这个框架，就专门为用户贡献的中间件开了一个仓库，见*图 5-9*：
+比如开源界很火的gin这个框架，就专门为用户贡献的中间件开了一个仓库，见_图 5-9_：
 
-![](../images/ch6-03-gin_contrib.png)
+![](../.gitbook/assets/ch6-03-gin_contrib.png)
 
-*图 5-9 gin的中间件仓库*
+_图 5-9 gin的中间件仓库_
 
 如果读者去阅读gin的源码的话，可能会发现gin的中间件中处理的并不是`http.Handler`，而是一个叫`gin.HandlerFunc`的函数类型，和本节中讲解的`http.Handler`签名并不一样。不过gin的`handler`也只是针对其框架的一种封装，中间件的原理与本节中的说明是一致的。
 

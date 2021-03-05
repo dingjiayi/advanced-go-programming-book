@@ -25,16 +25,16 @@ macOS的系统调用编号在`/usr/include/sys/syscall.h`头文件，Linux的系
 
 我们将基于write系统调用包装一个字符串输出函数。下面的代码是macOS版本：
 
-```
+```text
 // func SyscallWrite_Darwin(fd int, msg string) int
 TEXT ·SyscallWrite_Darwin(SB), NOSPLIT, $0
-	MOVQ $(0x2000000+4), AX // #define SYS_write 4
-	MOVQ fd+0(FP),       DI
-	MOVQ msg_data+8(FP), SI
-	MOVQ msg_len+16(FP), DX
-	SYSCALL
-	MOVQ AX, ret+0(FP)
-	RET
+    MOVQ $(0x2000000+4), AX // #define SYS_write 4
+    MOVQ fd+0(FP),       DI
+    MOVQ msg_data+8(FP), SI
+    MOVQ msg_len+16(FP), DX
+    SYSCALL
+    MOVQ AX, ret+0(FP)
+    RET
 ```
 
 其中第一个参数是输出文件的文件描述符编号，第二个参数是字符串的头部。字符串头部是由reflect.StringHeader结构定义，第一成员是8字节的数据指针，第二个成员是8字节的数据长度。在macOS系统中，执行系统调用时还需要将系统调用的编号加上0x2000000后再行传入AX。然后再将fd、数据地址和长度作为write系统调用的三个参数输入，分别对应DI、SI和DX三个寄存器。最后通过SYSCALL指令执行系统调用，系统调用返回后从AX获取返回值。
@@ -45,14 +45,13 @@ TEXT ·SyscallWrite_Darwin(SB), NOSPLIT, $0
 func SyscallWrite_Darwin(fd int, msg string) int
 
 func main() {
-	if runtime.GOOS == "darwin" {
-		SyscallWrite_Darwin(1, "hello syscall!\n")
-	}
+    if runtime.GOOS == "darwin" {
+        SyscallWrite_Darwin(1, "hello syscall!\n")
+    }
 }
 ```
 
 如果是Linux系统，只需要将编号改为write系统调用对应的1即可。而Windows的系统调用则有另外的参数传输规则。在X64环境Windows的系统调用参数传输规则和默认的C语言规则非常相似，在后续的直接调用C函数部分再行讨论。
-
 
 ## 3.7.2 直接调用C函数
 
@@ -68,7 +67,7 @@ func main() {
 #include <stdint.h>
 
 int64_t myadd(int64_t a, int64_t b) {
-	return a+b;
+    return a+b;
 }
 ```
 
@@ -84,16 +83,16 @@ func asmCallCAdd(cfun uintptr, a, b int64) int64
 
 下面是System V AMD64 ABI规范的asmCallCAdd函数的实现：
 
-```
+```text
 // System V AMD64 ABI
 // func asmCallCAdd(cfun uintptr, a, b int64) int64
 TEXT ·asmCallCAdd(SB), NOSPLIT, $0
-	MOVQ cfun+0(FP), AX // cfun
-	MOVQ a+8(FP),    DI // a
-	MOVQ b+16(FP),   SI // b
-	CALL AX
-	MOVQ AX, ret+24(FP)
-	RET
+    MOVQ cfun+0(FP), AX // cfun
+    MOVQ a+8(FP),    DI // a
+    MOVQ b+16(FP),   SI // b
+    CALL AX
+    MOVQ AX, ret+24(FP)
+    RET
 ```
 
 首先是将第一个参数表示的C函数地址保存到AX寄存器便于后续调用。然后分别将第二和第三个参数加载到DI和SI寄存器。然后CALL指令通过AX中保持的C语言函数地址调用C函数。最后从AX寄存器获取C函数的返回值，并通过asmCallCAdd函数返回。
@@ -107,27 +106,26 @@ Win64环境的C语言调用规范类似。不过Win64规范中只有CX、DX、R8
 #include <stdint.h>
 
 int64_t myadd(int64_t a, int64_t b) {
-	return a+b;
+    return a+b;
 }
 */
 import "C"
 
 import (
-	asmpkg "path/to/asm"
+    asmpkg "path/to/asm"
 )
 
 func main() {
-	if runtime.GOOS != "windows" {
-		println(asmpkg.asmCallCAdd(
-			uintptr(unsafe.Pointer(C.myadd)),
-			123, 456,
-		))
-	}
+    if runtime.GOOS != "windows" {
+        println(asmpkg.asmCallCAdd(
+            uintptr(unsafe.Pointer(C.myadd)),
+            123, 456,
+        ))
+    }
 }
 ```
 
 在上面的代码中，通过`C.myadd`获取C函数的地址，然后转换为合适的类型再传人asmCallCAdd函数。在这个例子中，汇编函数假设调用的C语言函数需要的栈很小，可以直接复用Go函数中多余的空间。如果C语言函数可能需要较大的栈，可以尝试像CGO那样切换到系统线程的栈上运行。
-
 
 ## 3.7.3 AVX指令
 
@@ -147,22 +145,22 @@ var X86 x86
 // in addition to the cpuid feature bit being set.
 // The struct is padded to avoid false sharing.
 type x86 struct {
-	HasAES       bool
-	HasADX       bool
-	HasAVX       bool
-	HasAVX2      bool
-	HasBMI1      bool
-	HasBMI2      bool
-	HasERMS      bool
-	HasFMA       bool
-	HasOSXSAVE   bool
-	HasPCLMULQDQ bool
-	HasPOPCNT    bool
-	HasSSE2      bool
-	HasSSE3      bool
-	HasSSSE3     bool
-	HasSSE41     bool
-	HasSSE42     bool
+    HasAES       bool
+    HasADX       bool
+    HasAVX       bool
+    HasAVX2      bool
+    HasBMI1      bool
+    HasBMI2      bool
+    HasERMS      bool
+    HasFMA       bool
+    HasOSXSAVE   bool
+    HasPCLMULQDQ bool
+    HasPOPCNT    bool
+    HasSSE2      bool
+    HasSSE3      bool
+    HasSSSE3     bool
+    HasSSE41     bool
+    HasSSE42     bool
 }
 ```
 
@@ -170,13 +168,13 @@ type x86 struct {
 
 ```go
 import (
-	cpu "path/to/cpu"
+    cpu "path/to/cpu"
 )
 
 func main() {
-	if cpu.X86.HasAVX2 {
-		// support AVX2
-	}
+    if cpu.X86.HasAVX2 {
+        // support AVX2
+    }
 }
 ```
 
@@ -184,21 +182,21 @@ AVX512是比较新的指令集，只有高端的CPU才会提供支持。为了�
 
 下面的例子是用AVX2指令复制数据，每次复制数据32字节倍数大小的数据：
 
-```
+```text
 // func CopySlice_AVX2(dst, src []byte, len int)
 TEXT ·CopySlice_AVX2(SB), NOSPLIT, $0
-	MOVQ dst_data+0(FP),  DI
-	MOVQ src_data+24(FP), SI
-	MOVQ len+32(FP),      BX
-	MOVQ $0,              AX
+    MOVQ dst_data+0(FP),  DI
+    MOVQ src_data+24(FP), SI
+    MOVQ len+32(FP),      BX
+    MOVQ $0,              AX
 
 LOOP:
-	VMOVDQU 0(SI)(AX*1), Y0
-	VMOVDQU Y0, 0(DI)(AX*1)
-	ADDQ $32, AX
-	CMPQ AX, BX
-	JL   LOOP
-	RET
+    VMOVDQU 0(SI)(AX*1), Y0
+    VMOVDQU Y0, 0(DI)(AX*1)
+    ADDQ $32, AX
+    CMPQ AX, BX
+    JL   LOOP
+    RET
 ```
 
 其中VMOVDQU指令先将`0(SI)(AX*1)`地址开始的32字节数据复制到Y0寄存器中，然后再复制到`0(DI)(AX*1)`对应的目标内存中。VMOVDQU指令操作的数据地址可以不用对齐。

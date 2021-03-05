@@ -6,30 +6,30 @@
 package main
 
 import (
-	"sync"
+    "sync"
 )
 
 // 全局变量
 var counter int
 
 func main() {
-	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func() {
-		defer wg.Done()
-			counter++
-		}()
-	}
+    var wg sync.WaitGroup
+    for i := 0; i < 1000; i++ {
+        wg.Add(1)
+        go func() {
+        defer wg.Done()
+            counter++
+        }()
+    }
 
-	wg.Wait()
-	println(counter)
+    wg.Wait()
+    println(counter)
 }
 ```
 
 多次运行会得到不同的结果：
 
-```shell
+```text
 ❯❯❯ go run local_lock.go
 945
 ❯❯❯ go run local_lock.go
@@ -47,13 +47,13 @@ func main() {
 var wg sync.WaitGroup
 var l sync.Mutex
 for i := 0; i < 1000; i++ {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		l.Lock()
-		counter++
-		l.Unlock()
-	}()
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        l.Lock()
+        counter++
+        l.Unlock()
+    }()
 }
 
 wg.Wait()
@@ -63,7 +63,7 @@ println(counter)
 
 这样就可以稳定地得到计算结果了：
 
-```shell
+```text
 ❯❯❯ go run local_lock.go
 1000
 ```
@@ -78,58 +78,58 @@ trylock顾名思义，尝试加锁，加锁成功执行后续流程，如果加�
 package main
 
 import (
-	"sync"
+    "sync"
 )
 
 // Lock try lock
 type Lock struct {
-	c chan struct{}
+    c chan struct{}
 }
 
 // NewLock generate a try lock
 func NewLock() Lock {
-	var l Lock
-	l.c = make(chan struct{}, 1)
-	l.c <- struct{}{}
-	return l
+    var l Lock
+    l.c = make(chan struct{}, 1)
+    l.c <- struct{}{}
+    return l
 }
 
 // Lock try lock, return lock result
 func (l Lock) Lock() bool {
-	lockResult := false
-	select {
-	case <-l.c:
-		lockResult = true
-	default:
-	}
-	return lockResult
+    lockResult := false
+    select {
+    case <-l.c:
+        lockResult = true
+    default:
+    }
+    return lockResult
 }
 
 // Unlock , Unlock the try lock
 func (l Lock) Unlock() {
-	l.c <- struct{}{}
+    l.c <- struct{}{}
 }
 
 var counter int
 
 func main() {
-	var l = NewLock()
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if !l.Lock() {
-				// log error
-				println("lock failed")
-				return
-			}
-			counter++
-			println("current counter", counter)
-			l.Unlock()
-		}()
-	}
-	wg.Wait()
+    var l = NewLock()
+    var wg sync.WaitGroup
+    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            if !l.Lock() {
+                // log error
+                println("lock failed")
+                return
+            }
+            counter++
+            println("current counter", counter)
+            l.Unlock()
+        }()
+    }
+    wg.Wait()
 }
 ```
 
@@ -147,71 +147,71 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"sync"
-	"time"
+    "fmt"
+    "sync"
+    "time"
 
-	"github.com/go-redis/redis"
+    "github.com/go-redis/redis"
 )
 
 func incr() {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+    client := redis.NewClient(&redis.Options{
+        Addr:     "localhost:6379",
+        Password: "", // no password set
+        DB:       0,  // use default DB
+    })
 
-	var lockKey = "counter_lock"
-	var counterKey = "counter"
+    var lockKey = "counter_lock"
+    var counterKey = "counter"
 
-	// lock
-	resp := client.SetNX(lockKey, 1, time.Second*5)
-	lockSuccess, err := resp.Result()
+    // lock
+    resp := client.SetNX(lockKey, 1, time.Second*5)
+    lockSuccess, err := resp.Result()
 
-	if err != nil || !lockSuccess {
-		fmt.Println(err, "lock result: ", lockSuccess)
-		return
-	}
+    if err != nil || !lockSuccess {
+        fmt.Println(err, "lock result: ", lockSuccess)
+        return
+    }
 
-	// counter ++
-	getResp := client.Get(counterKey)
-	cntValue, err := getResp.Int64()
-	if err == nil || err == redis.Nil {
-		cntValue++
-		resp := client.Set(counterKey, cntValue, 0)
-		_, err := resp.Result()
-		if err != nil {
-			// log err
-			println("set value error!")
-		}
-	}
-	println("current counter is ", cntValue)
+    // counter ++
+    getResp := client.Get(counterKey)
+    cntValue, err := getResp.Int64()
+    if err == nil || err == redis.Nil {
+        cntValue++
+        resp := client.Set(counterKey, cntValue, 0)
+        _, err := resp.Result()
+        if err != nil {
+            // log err
+            println("set value error!")
+        }
+    }
+    println("current counter is ", cntValue)
 
-	delResp := client.Del(lockKey)
-	unlockSuccess, err := delResp.Result()
-	if err == nil && unlockSuccess > 0 {
-		println("unlock success!")
-	} else {
-		println("unlock failed", err)
-	}
+    delResp := client.Del(lockKey)
+    unlockSuccess, err := delResp.Result()
+    if err == nil && unlockSuccess > 0 {
+        println("unlock success!")
+    } else {
+        println("unlock failed", err)
+    }
 }
 
 func main() {
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			incr()
-		}()
-	}
-	wg.Wait()
+    var wg sync.WaitGroup
+    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            incr()
+        }()
+    }
+    wg.Wait()
 }
 ```
 
 看看运行结果：
 
-```shell
+```text
 ❯❯❯ go run redis_setnx.go
 <nil> lock result:  false
 <nil> lock result:  false
@@ -238,28 +238,28 @@ unlock success!
 package main
 
 import (
-	"time"
+    "time"
 
-	"github.com/samuel/go-zookeeper/zk"
+    "github.com/samuel/go-zookeeper/zk"
 )
 
 func main() {
-	c, _, err := zk.Connect([]string{"127.0.0.1"}, time.Second) //*10)
-	if err != nil {
-		panic(err)
-	}
-	l := zk.NewLock(c, "/lock", zk.WorldACL(zk.PermAll))
-	err = l.Lock()
-	if err != nil {
-		panic(err)
-	}
-	println("lock succ, do your business logic")
+    c, _, err := zk.Connect([]string{"127.0.0.1"}, time.Second) //*10)
+    if err != nil {
+        panic(err)
+    }
+    l := zk.NewLock(c, "/lock", zk.WorldACL(zk.PermAll))
+    err = l.Lock()
+    if err != nil {
+        panic(err)
+    }
+    println("lock succ, do your business logic")
 
-	time.Sleep(time.Second * 10)
+    time.Sleep(time.Second * 10)
 
-	// do some thing
-	l.Unlock()
-	println("unlock succ, finish business logic")
+    // do some thing
+    l.Unlock()
+    println("unlock succ, finish business logic")
 }
 ```
 
@@ -277,32 +277,32 @@ etcd是分布式系统中，功能上与ZooKeeper类似的组件，这两年越�
 package main
 
 import (
-	"log"
+    "log"
 
-	"github.com/zieckey/etcdsync"
+    "github.com/zieckey/etcdsync"
 )
 
 func main() {
-	m, err := etcdsync.New("/lock", 10, []string{"http://127.0.0.1:2379"})
-	if m == nil || err != nil {
-		log.Printf("etcdsync.New failed")
-		return
-	}
-	err = m.Lock()
-	if err != nil {
-		log.Printf("etcdsync.Lock failed")
-		return
-	}
+    m, err := etcdsync.New("/lock", 10, []string{"http://127.0.0.1:2379"})
+    if m == nil || err != nil {
+        log.Printf("etcdsync.New failed")
+        return
+    }
+    err = m.Lock()
+    if err != nil {
+        log.Printf("etcdsync.Lock failed")
+        return
+    }
 
-	log.Printf("etcdsync.Lock OK")
-	log.Printf("Get the lock. Do something here.")
+    log.Printf("etcdsync.Lock OK")
+    log.Printf("Get the lock. Do something here.")
 
-	err = m.Unlock()
-	if err != nil {
-		log.Printf("etcdsync.Unlock failed")
-	} else {
-		log.Printf("etcdsync.Unlock OK")
-	}
+    err = m.Unlock()
+    if err != nil {
+        log.Printf("etcdsync.Unlock failed")
+    } else {
+        log.Printf("etcdsync.Unlock OK")
+    }
 }
 ```
 
@@ -326,3 +326,4 @@ etcd中没有像ZooKeeper那样的Sequence节点。所以其锁实现和基于Zo
 对锁数据的可靠性要求极高的话，那只能使用etcd或者ZooKeeper这种通过一致性协议保证数据可靠性的锁方案。但可靠的背面往往都是较低的吞吐量和较高的延迟。需要根据业务的量级对其进行压力测试，以确保分布式锁所使用的etcd或ZooKeeper集群可以承受得住实际的业务请求压力。需要注意的是，etcd和Zookeeper集群是没有办法通过增加节点来提高其性能的。要对其进行横向扩展，只能增加搭建多个集群来支持更多的请求。这会进一步提高对运维和监控的要求。多个集群可能需要引入proxy，没有proxy那就需要业务去根据某个业务id来做分片。如果业务已经上线的情况下做扩展，还要考虑数据的动态迁移。这些都不是容易的事情。
 
 在选择具体的方案时，还是需要多加思考，对风险早做预估。
+

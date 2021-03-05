@@ -8,21 +8,21 @@
 
 举个最简单的例子：
 
-```Go
+```go
 package main
 
 /*
 #include <stdio.h>
 
 void printint(int v) {
-	printf("printint: %d\n", v);
+    printf("printint: %d\n", v);
 }
 */
 import "C"
 
 func main() {
-	v := 42
-	C.printint(C.int(v))
+    v := 42
+    C.printint(C.int(v))
 }
 ```
 
@@ -43,11 +43,11 @@ import "C"
 type CChar C.char
 
 func (p *CChar) GoString() string {
-	return C.GoString((*C.char)(p))
+    return C.GoString((*C.char)(p))
 }
 
 func PrintCString(cs *C.char) {
-	C.puts(cs)
+    C.puts(cs)
 }
 ```
 
@@ -61,15 +61,13 @@ import "C"
 import "./cgo_helper"
 
 func main() {
-	cgo_helper.PrintCString(C.cs)
+    cgo_helper.PrintCString(C.cs)
 }
 ```
 
-这段代码是不能正常工作的，因为当前main包引入的`C.cs`变量的类型是当前`main`包的cgo构造的虚拟的C包下的`*char`类型（具体点是`*C.char`，更具体点是`*main.C.char`），它和cgo_helper包引入的`*C.char`类型（具体点是`*cgo_helper.C.char`）是不同的。在Go语言中方法是依附于类型存在的，不同Go包中引入的虚拟的C包的类型却是不同的（`main.C`不等`cgo_helper.C`），这导致从它们延伸出来的Go类型也是不同的类型（`*main.C.char`不等`*cgo_helper.C.char`），这最终导致了前面代码不能正常工作。
+这段代码是不能正常工作的，因为当前main包引入的`C.cs`变量的类型是当前`main`包的cgo构造的虚拟的C包下的`*char`类型（具体点是`*C.char`，更具体点是`*main.C.char`），它和cgo\_helper包引入的`*C.char`类型（具体点是`*cgo_helper.C.char`）是不同的。在Go语言中方法是依附于类型存在的，不同Go包中引入的虚拟的C包的类型却是不同的（`main.C`不等`cgo_helper.C`），这导致从它们延伸出来的Go类型也是不同的类型（`*main.C.char`不等`*cgo_helper.C.char`），这最终导致了前面代码不能正常工作。
 
 有Go语言使用经验的用户可能会建议参数转型后再传入。但是这个方法似乎也是不可行的，因为`cgo_helper.PrintCString`的参数是它自身包引入的`*C.char`类型，在外部是无法直接获取这个类型的。换言之，一个包如果在公开的接口中直接使用了`*C.char`等类似的虚拟C包的类型，其它的Go包是无法直接使用这些类型的，除非这个Go包同时也提供了`*C.char`类型的构造函数。因为这些诸多因素，如果想在go test环境直接测试这些cgo导出的类型也会有相同的限制。
-
-<!-- 测试代码；需要确实是否有问题 -->
 
 ## 2.2.2 `#cgo`语句
 
@@ -82,28 +80,27 @@ func main() {
 import "C"
 ```
 
-上面的代码中，CFLAGS部分，`-D`部分定义了宏PNG_DEBUG，值为1；`-I`定义了头文件包含的检索目录。LDFLAGS部分，`-L`指定了链接时库文件检索目录，`-l`指定了链接时需要链接png库。
-
+上面的代码中，CFLAGS部分，`-D`部分定义了宏PNG\_DEBUG，值为1；`-I`定义了头文件包含的检索目录。LDFLAGS部分，`-L`指定了链接时库文件检索目录，`-l`指定了链接时需要链接png库。
 
 因为C/C++遗留的问题，C头文件检索目录可以是相对目录，但是库文件检索目录则需要绝对路径。在库文件的检索目录中可以通过`${SRCDIR}`变量表示当前包目录的绝对路径：
 
-```
+```text
 // #cgo LDFLAGS: -L${SRCDIR}/libs -lfoo
 ```
 
 上面的代码在链接时将被展开为：
 
-```
+```text
 // #cgo LDFLAGS: -L/go/src/foo/libs -lfoo
 ```
 
-`#cgo`语句主要影响CFLAGS、CPPFLAGS、CXXFLAGS、FFLAGS和LDFLAGS几个编译器环境变量。LDFLAGS用于设置链接时的参数，除此之外的几个变量用于改变编译阶段的构建参数(CFLAGS用于针对C语言代码设置编译参数)。
+`#cgo`语句主要影响CFLAGS、CPPFLAGS、CXXFLAGS、FFLAGS和LDFLAGS几个编译器环境变量。LDFLAGS用于设置链接时的参数，除此之外的几个变量用于改变编译阶段的构建参数\(CFLAGS用于针对C语言代码设置编译参数\)。
 
 对于在cgo环境混合使用C和C++的用户来说，可能有三种不同的编译选项：其中CFLAGS对应C语言特有的编译选项、CXXFLAGS对应是C++特有的编译选项、CPPFLAGS则对应C和C++共有的编译选项。但是在链接阶段，C和C++的链接选项是通用的，因此这个时候已经不再有C和C++语言的区别，它们的目标文件的类型是相同的。
 
 `#cgo`指令还支持条件选择，当满足某个操作系统或某个CPU架构类型时后面的编译或链接选项生效。比如下面是分别针对windows和非windows下平台的编译和链接选项：
 
-```
+```text
 // #cgo windows CFLAGS: -DX86=1
 // #cgo !windows LDFLAGS: -lm
 ```
@@ -121,19 +118,19 @@ package main
 #cgo linux CFLAGS: -DCGO_OS_LINUX=1
 
 #if defined(CGO_OS_WINDOWS)
-	const char* os = "windows";
+    const char* os = "windows";
 #elif defined(CGO_OS_DARWIN)
-	const char* os = "darwin";
+    const char* os = "darwin";
 #elif defined(CGO_OS_LINUX)
-	const char* os = "linux";
+    const char* os = "linux";
 #else
-#	error(unknown os)
+#    error(unknown os)
 #endif
 */
 import "C"
 
 func main() {
-	print(C.GoString(C.os))
+    print(C.GoString(C.os))
 }
 ```
 
@@ -155,7 +152,7 @@ var buildMode = "debug"
 
 可以用以下命令构建：
 
-```
+```text
 go build -tags="debug"
 go build -tags="windows debug"
 ```
@@ -169,3 +166,4 @@ go build -tags="windows debug"
 ```
 
 其中`linux,386`中linux和386用逗号链接表示AND的意思；而`linux,386`和`darwin,!cgo`之间通过空白分割来表示OR的意思。
+

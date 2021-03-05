@@ -6,7 +6,7 @@
 
 Go汇编语言中常量以$美元符号为前缀。常量的类型有整数常量、浮点数常量、字符常量和字符串常量等几种类型。以下是几种类型常量的例子：
 
-```
+```text
 $1           // 十进制
 $0xf4f8fcff  // 十六进制
 $1.5         // 浮点数
@@ -18,7 +18,7 @@ $"abcd"      // 字符串
 
 对于数值型常量，可以通过常量表达式构成新的常量：
 
-```
+```text
 $2+2      // 常量表达式
 $3&1<<2   // == $4
 $(3&1)<<2 // == $4
@@ -30,7 +30,7 @@ Go汇编语言中的常量其实不仅仅只有编译时常量，还包含运行
 
 下面是本章第一节用汇编定义的字符串代码：
 
-```
+```text
 GLOBL ·NameData(SB),$8
 DATA  ·NameData(SB)/8,$"gopher"
 
@@ -40,7 +40,6 @@ DATA  ·Name+8(SB)/8,$6
 ```
 
 其中`$·NameData(SB)`也是以$美元符号为前缀，因此也可以将它看作是一个常量，它对应的是NameData包变量的地址。在汇编指令中，我们也可以通过LEA指令来获取NameData变量的地址。
-
 
 ## 3.3.2 全局变量
 
@@ -52,13 +51,13 @@ DATA  ·Name+8(SB)/8,$6
 
 要定义全局变量，首先要声明一个变量对应的符号，以及变量对应的内存大小。导出变量符号的语法如下：
 
-```
+```text
 GLOBL symbol(SB), width
 ```
 
 GLOBL汇编指令用于定义名为symbol的变量，变量对应的内存宽度为width，内存宽度部分必须用常量初始化。下面的代码通过汇编定义一个int32类型的count变量：
 
-```
+```text
 GLOBL ·count(SB),$4
 ```
 
@@ -66,7 +65,7 @@ GLOBL ·count(SB),$4
 
 变量定义之后，我们可以通过DATA汇编指令指定对应内存中的数据，语法如下：
 
-```
+```text
 DATA symbol+offset(SB)/width, value
 ```
 
@@ -74,7 +73,7 @@ DATA symbol+offset(SB)/width, value
 
 对于int32类型的count变量来说，我们既可以逐个字节初始化，也可以一次性初始化：
 
-```
+```text
 DATA ·count+0(SB)/1,$1
 DATA ·count+1(SB)/1,$2
 DATA ·count+2(SB)/1,$3
@@ -89,7 +88,6 @@ DATA ·count+0(SB)/4,$0x04030201
 
 最后还需要在Go语言中声明对应的变量（和C语言头文件声明变量的作用类似），这样垃圾回收器会根据变量的类型来管理其中的指针相关的内存数据。
 
-
 ### 3.3.2.1 数组类型
 
 汇编中数组也是一种非常简单的类型。Go语言中数组是一种有着扁平内存结构的基础类型。因此`[2]byte`类型和`[1]uint16`类型有着相同的内存结构。只有当数组和结构体结合之后情况才会变的稍微复杂。
@@ -102,7 +100,7 @@ var num [2]int
 
 然后在汇编中定义一个对应16字节大小的变量，并用零值进行初始化：
 
-```
+```text
 GLOBL ·num(SB),$16
 DATA ·num+0(SB)/8,$0
 DATA ·num+8(SB)/8,$0
@@ -110,13 +108,11 @@ DATA ·num+8(SB)/8,$0
 
 下图是Go语句和汇编语句定义变量时的对应关系：
 
-![](../images/ch3-4-pkg-var-decl-01.ditaa.png)
+![](../.gitbook/assets/ch3-4-pkg-var-decl-01.ditaa.png)
 
-*图 3-4 变量定义*
-
+_图 3-4 变量定义_
 
 汇编代码中并不需要NOPTR标志，因为Go编译器会从Go语言语句声明的`[2]int`类型中推导出该变量内部没有指针数据。
-
 
 ### 3.3.2.2 bool型变量
 
@@ -124,15 +120,15 @@ Go汇编语言定义变量无法指定类型信息，因此需要先通过Go语�
 
 ```go
 var (
-	boolValue  bool
-	trueValue  bool
-	falseValue bool
+    boolValue  bool
+    trueValue  bool
+    falseValue bool
 )
 ```
 
 在Go语言中声明的变量不能含有初始化语句。然后下面是amd64环境的汇编定义：
 
-```
+```text
 GLOBL ·boolValue(SB),$1   // 未初始化
 
 GLOBL ·trueValue(SB),$1   // var trueValue = true
@@ -156,7 +152,7 @@ var uint32Value uint32
 
 在Go语言中声明的变量不能含有初始化语句。然后下面是amd64环境的汇编定义：
 
-```
+```text
 GLOBL ·int32Value(SB),$4
 DATA ·int32Value+0(SB)/1,$0x01  // 第0字节
 DATA ·int32Value+1(SB)/1,$0x02  // 第1字节
@@ -174,10 +170,9 @@ Go汇编语言通常无法区分变量是否是浮点数类型，与之相关的
 
 IEEE754标准中，最高位1bit为符号位，然后是指数位（指数为采用移码格式表示），然后是有效数部分（其中小数点左边的一个bit位被省略）。下图是IEEE754中float32类型浮点数的bit布局：
 
-![](../images/ch3-5-ieee754.jpg)
+![](../.gitbook/assets/ch3-5-ieee754.jpg)
 
-*图 3-5 IEEE754浮点数结构*
-
+_图 3-5 IEEE754浮点数结构_
 
 IEEE754浮点数还有一些奇妙的特性：比如有正负两个0；除了无穷大和无穷小Inf还有非数NaN；同时如果两个浮点数有序那么对应的有符号整数也是有序的（反之则不一定成立，因为浮点数中存在的非数是不可排序的）。浮点数是程序中最难琢磨的角落，因为程序中很多手写的浮点数字面值常量根本无法精确表达，浮点数计算涉及到的误差舍入方式可能也的随机的。
 
@@ -191,7 +186,7 @@ var float64Value float64
 
 然后在汇编中定义并初始化上面声明的两个浮点数：
 
-```
+```text
 GLOBL ·float32Value(SB),$4
 DATA ·float32Value+0(SB)/4,$1.5      // var float32Value = 1.5
 
@@ -207,8 +202,8 @@ DATA ·float64Value(SB)/8,$0x01020304 // bit 方式初始化
 
 ```go
 type reflect.StringHeader struct {
-	Data uintptr
-	Len  int
+    Data uintptr
+    Len  int
 }
 ```
 
@@ -218,13 +213,13 @@ type reflect.StringHeader struct {
 var helloworld string
 ```
 
-```
+```text
 GLOBL ·helloworld(SB),$16
 ```
 
 同时我们可以为字符串准备真正的数据。在下面的汇编代码中，我们定义了一个text当前文件内的私有变量（以`<>`为后缀名），内容为“Hello World!”：
 
-```
+```text
 GLOBL text<>(SB),NOPTR,$16
 DATA text<>+0(SB)/8,$"Hello Wo"
 DATA text<>+8(SB)/8,$"rld!"
@@ -234,7 +229,7 @@ DATA text<>+8(SB)/8,$"rld!"
 
 然后使用text私有变量对应的内存地址对应的常量来初始化字符串头结构体中的Data部分，并且手工指定Len部分为字符串的长度：
 
-```
+```text
 DATA ·helloworld+0(SB)/8,$text<>(SB) // StringHeader.Data
 DATA ·helloworld+8(SB)/8,$12         // StringHeader.Len
 ```
@@ -247,9 +242,9 @@ slice变量和string变量相似，只不过是对应的是切片头结构体而
 
 ```go
 type reflect.SliceHeader struct {
-	Data uintptr
-	Len  int
-	Cap  int
+    Data uintptr
+    Len  int
+    Cap  int
 }
 ```
 
@@ -259,7 +254,7 @@ type reflect.SliceHeader struct {
 var helloworld []byte
 ```
 
-```
+```text
 GLOBL ·helloworld(SB),$24            // var helloworld []byte("Hello World!")
 DATA ·helloworld+0(SB)/8,$text<>(SB) // StringHeader.Data
 DATA ·helloworld+8(SB)/8,$12         // StringHeader.Len
@@ -282,7 +277,7 @@ var m map[string]int
 var ch chan int
 ```
 
-```
+```text
 GLOBL ·m(SB),$8  // var m map[string]int
 DATA  ·m+0(SB)/8,$0
 
@@ -299,26 +294,23 @@ func makechan(chanType *byte, size int) (hchan chan any)
 
 需要注意的是，makemap是一种范型函数，可以创建不同类型的map，map的具体类型是通过mapType参数指定。
 
-
 ## 3.3.3 变量的内存布局
 
 我们已经多次强调，在Go汇编语言中变量是没有类型的。因此在Go语言中有着不同类型的变量，底层可能对应的是相同的内存结构。深刻理解每个变量的内存布局是汇编编程时的必备条件。
 
 首先查看前面已经见过的`[2]int`类型数组的内存布局：
 
-![](../images/ch3-6-pkg-var-decl-02.ditaa.png)
+![](../.gitbook/assets/ch3-6-pkg-var-decl-02.ditaa.png)
 
-*图 3-6 变量定义*
-
+_图 3-6 变量定义_
 
 变量在data段分配空间，数组的元素地址依次从低向高排列。
 
 然后再查看下标准库图像包中`image.Point`结构体类型变量的内存布局：
 
-![](../images/ch3-7-pkg-var-decl-03.ditaa.png)
+![](../.gitbook/assets/ch3-7-pkg-var-decl-03.ditaa.png)
 
-*图 3-7 结构体变量定义*
-
+_图 3-7 结构体变量定义_
 
 变量也时在data段分配空间，变量结构体成员的地址也是依次从低向高排列。
 
@@ -330,7 +322,7 @@ Go语言的标识符可以由绝对的包路径加标识符本身定位，因此
 
 下面是汇编中常见的几种标识符的使用方式（通常也适用于函数标识符）：
 
-```
+```text
 GLOBL ·pkg_name1(SB),$1
 GLOBL main·pkg_name2(SB),$1
 GLOBL my/pkg·pkg_name(SB),$1
@@ -338,7 +330,7 @@ GLOBL my/pkg·pkg_name(SB),$1
 
 此外，Go汇编中可以定义仅当前文件可以访问的私有标识符（类似C语言中文件内static修饰的变量），以`<>`为后缀名：
 
-```
+```text
 GLOBL file_private<>(SB),$1
 ```
 
@@ -352,16 +344,16 @@ GLOBL file_private<>(SB),$1
 var const_id int // readonly
 ```
 
-```
+```text
 #include "textflag.h"
 
 GLOBL ·const_id(SB),NOPTR|RODATA,$8
 DATA  ·const_id+0(SB)/8,$9527
 ```
 
-我们使用#include语句包含定义标志的"textflag.h"头文件（和C语言中预处理相同）。然后GLOBL汇编命令在定义变量时，给变量增加了NOPTR和RODATA两个标志（多个标志之间采用竖杠分割），表示变量中没有指针数据同时定义在只读数据段。
+我们使用\#include语句包含定义标志的"textflag.h"头文件（和C语言中预处理相同）。然后GLOBL汇编命令在定义变量时，给变量增加了NOPTR和RODATA两个标志（多个标志之间采用竖杠分割），表示变量中没有指针数据同时定义在只读数据段。
 
-变量一般也叫可取地址的值，但是const_id虽然可以取地址，但是确实不能修改。不能修改的限制并不是由编译器提供，而是因为对该变量的修改会导致对只读内存段进行写，从而导致异常。
+变量一般也叫可取地址的值，但是const\_id虽然可以取地址，但是确实不能修改。不能修改的限制并不是由编译器提供，而是因为对该变量的修改会导致对只读内存段进行写，从而导致异常。
 
 ## 3.3.5 小结
 

@@ -1,4 +1,4 @@
-# 5.9 灰度发布和 A/B test
+# 5.9 灰度发布和A/B测试
 
 中型的互联网公司往往有着以百万计的用户，而大型互联网公司的系统则可能要服务千万级甚至亿级的用户需求。大型系统的请求流入往往是源源不断的，任何风吹草动，都一定会有最终用户感受得到。例如你的系统在上线途中会拒绝一些上游过来的请求，而这时候依赖你的系统没有做任何容错，那么这个错误就会一直向上抛出，直到触达最终用户。形成一次对用户切切实实的伤害。这种伤害可能是在用户的APP上弹出一个让用户摸不着头脑的诡异字符串，用户只要刷新一下页面就可以忘记这件事。但也可能会让正在心急如焚地和几万竞争对手同时抢夺秒杀商品的用户，因为代码上的小问题，丧失掉了先发优势，与自己蹲了几个月的心仪产品失之交臂。对用户的伤害有多大，取决于你的系统对于你的用户来说有多重要。
 
@@ -15,9 +15,9 @@
 
 假如服务部署在15个实例（可能是物理机，也可能是容器）上，我们把这15个实例分为四组，按照先后顺序，分别有1-2-4-8台机器，保证每次扩展时大概都是二倍的关系。
 
-![online group](../images/ch5-online-group.png)
+![online group](../.gitbook/assets/ch5-online-group.png)
 
-*图 5-20 分组部署*
+_图 5-20 分组部署_
 
 为什么要用2倍？这样能够保证我们不管有多少台机器，都不会把组划分得太多。例如1024台机器，也就只需要1-2-4-8-16-32-64-128-256-512部署十次就可以全部部署完毕。
 
@@ -34,12 +34,12 @@
 ```go
 // pass 3/1000
 func passed() bool {
-	key := hashFunctions(userID) % 1000
-	if key <= 2 {
-		return true
-	}
+    key := hashFunctions(userID) % 1000
+    if key <= 2 {
+        return true
+    }
 
-	return false
+    return false
 }
 ```
 
@@ -52,7 +52,7 @@ func passed() bool {
 3. 按百分比发布
 4. 按白名单发布
 5. 按业务线发布
-6. 按UA发布(APP、Web、PC)
+6. 按UA发布\(APP、Web、PC\)
 7. 按分发渠道发布
 
 因为和公司的业务相关，所以城市、业务线、UA、分发渠道这些都可能会被直接编码在系统里，不过功能其实大同小异。
@@ -63,7 +63,7 @@ func passed() bool {
 
 ```go
 func isTrue() bool {
-	return true/false according to the rate provided by user
+    return true/false according to the rate provided by user
 }
 ```
 
@@ -73,25 +73,25 @@ func isTrue() bool {
 
 ```go
 func isTrue(phone string) bool {
-	if hash of phone matches {
-		return true
-	}
+    if hash of phone matches {
+        return true
+    }
 
-	return false
+    return false
 }
 ```
 
-这种情况可以按照指定的百分比，返回对应的`true`和`false`，和上面的单纯按照概率的区别是这里我们需要调用方提供给我们一个输入参数，我们以该输入参数作为源来计算哈希，并以哈希后的结果来求模，并返回结果。这样可以保证同一个用户的返回结果多次调用是一致的，在下面这种场景下，必须使用这种结果可预期的灰度算法，见*图 5-21*所示。
+这种情况可以按照指定的百分比，返回对应的`true`和`false`，和上面的单纯按照概率的区别是这里我们需要调用方提供给我们一个输入参数，我们以该输入参数作为源来计算哈希，并以哈希后的结果来求模，并返回结果。这样可以保证同一个用户的返回结果多次调用是一致的，在下面这种场景下，必须使用这种结果可预期的灰度算法，见_图 5-21_所示。
 
-![set 和 get 流程不应该因为灰度走到不同版本的 API](../images/ch5-set-time-line.png)
+![set &#x548C; get &#x6D41;&#x7A0B;&#x4E0D;&#x5E94;&#x8BE5;&#x56E0;&#x4E3A;&#x7070;&#x5EA6;&#x8D70;&#x5230;&#x4E0D;&#x540C;&#x7248;&#x672C;&#x7684; API](../.gitbook/assets/ch5-set-time-line.png)
 
-*图 5-21 先set然后马上get*
+_图 5-21 先set然后马上get_
 
-如果采用随机策略，可能会出现像*图 5-22*这样的问题：
+如果采用随机策略，可能会出现像_图 5-22_这样的问题：
 
-![set 和 get 流程不应该因为灰度走到不同版本的 API](../images/ch5-set-time-line_2.png)
+![set &#x548C; get &#x6D41;&#x7A0B;&#x4E0D;&#x5E94;&#x8BE5;&#x56E0;&#x4E3A;&#x7070;&#x5EA6;&#x8D70;&#x5230;&#x4E0D;&#x540C;&#x7248;&#x672C;&#x7684; API](../.gitbook/assets/ch5-set-time-line_2.png)
 
-*图 5-22 先set然后马上get*
+_图 5-22 先set然后马上get_
 
 举个具体的例子，网站的注册环节，可能有两套API，按照用户ID进行灰度，分别是不同的存取逻辑。如果存储时使用了V1版本的API而获取时使用V2版本的API，那么就可能出现用户注册成功后反而返回注册失败消息的诡异问题。
 
@@ -107,16 +107,16 @@ func isTrue(phone string) bool {
 var cityID2Open = [12000]bool{}
 
 func init() {
-	readConfig()
-	for i:=0;i<len(cityID2Open);i++ {
-		if city i is opened in configs {
-			cityID2Open[i] = true
-		}
-	}
+    readConfig()
+    for i:=0;i<len(cityID2Open);i++ {
+        if city i is opened in configs {
+            cityID2Open[i] = true
+        }
+    }
 }
 
 func isPassed(cityID int) bool {
-	return cityID2Open[cityID]
+    return cityID2Open[cityID]
 }
 ```
 
@@ -126,18 +126,18 @@ func isPassed(cityID int) bool {
 var cityID2Open = map[int]struct{}{}
 
 func init() {
-	readConfig()
-	for _, city := range openCities {
-		cityID2Open[city] = struct{}{}
-	}
+    readConfig()
+    for _, city := range openCities {
+        cityID2Open[city] = struct{}{}
+    }
 }
 
 func isPassed(cityID int) bool {
-	if _, ok := cityID2Open[cityID]; ok {
-		return true
-	}
+    if _, ok := cityID2Open[cityID]; ok {
+        return true
+    }
 
-	return false
+    return false
 }
 ```
 
@@ -146,22 +146,21 @@ func isPassed(cityID int) bool {
 按概率发布稍微特殊一些，不过不考虑输入实现起来也很简单：
 
 ```go
-
 func init() {
-	rand.Seed(time.Now().UnixNano())
+    rand.Seed(time.Now().UnixNano())
 }
 
 // rate 为 0~100
 func isPassed(rate int) bool {
-	if rate >= 100 {
-		return true
-	}
+    if rate >= 100 {
+        return true
+    }
 
-	if rate > 0 && rand.Int(100) > rate {
-		return true
-	}
+    if rate > 0 && rand.Int(100) > rate {
+        return true
+    }
 
-	return false
+    return false
 }
 ```
 
@@ -177,28 +176,28 @@ func isPassed(rate int) bool {
 package main
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
+    "crypto/md5"
+    "crypto/sha1"
 
-	"github.com/spaolacci/murmur3"
+    "github.com/spaolacci/murmur3"
 )
 
 var str = "hello world"
 
 func md5Hash() [16]byte {
-	return md5.Sum([]byte(str))
+    return md5.Sum([]byte(str))
 }
 
 func sha1Hash() [20]byte {
-	return sha1.Sum([]byte(str))
+    return sha1.Sum([]byte(str))
 }
 
 func murmur32() uint32 {
-	return murmur3.Sum32([]byte(str))
+    return murmur3.Sum32([]byte(str))
 }
 
 func murmur64() uint64 {
-	return murmur3.Sum64([]byte(str))
+    return murmur3.Sum64([]byte(str))
 }
 ```
 
@@ -210,34 +209,33 @@ package main
 import "testing"
 
 func BenchmarkMD5(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		md5Hash()
-	}
+    for i := 0; i < b.N; i++ {
+        md5Hash()
+    }
 }
 
 func BenchmarkSHA1(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		sha1Hash()
-	}
+    for i := 0; i < b.N; i++ {
+        sha1Hash()
+    }
 }
 
 func BenchmarkMurmurHash32(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		murmur32()
-	}
+    for i := 0; i < b.N; i++ {
+        murmur32()
+    }
 }
 
 func BenchmarkMurmurHash64(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		murmur64()
-	}
+    for i := 0; i < b.N; i++ {
+        murmur64()
+    }
 }
-
 ```
 
 然后看看运行效果：
 
-```shell
+```text
 ~/t/g/hash_bench git:master ❯❯❯ go test -bench=.
 goos: darwin
 goarch: amd64
@@ -261,32 +259,33 @@ ok _/Users/caochunhui/test/go/hash_bench 7.050s
 package main
 
 import (
-	"fmt"
+    "fmt"
 
-	"github.com/spaolacci/murmur3"
+    "github.com/spaolacci/murmur3"
 )
 
 var bucketSize = 10
 
 func main() {
-	var bucketMap = map[uint64]int{}
-	for i := 15000000000; i < 15000000000+10000000; i++ {
-		hashInt := murmur64(fmt.Sprint(i)) % uint64(bucketSize)
-		bucketMap[hashInt]++
-	}
-	fmt.Println(bucketMap)
+    var bucketMap = map[uint64]int{}
+    for i := 15000000000; i < 15000000000+10000000; i++ {
+        hashInt := murmur64(fmt.Sprint(i)) % uint64(bucketSize)
+        bucketMap[hashInt]++
+    }
+    fmt.Println(bucketMap)
 }
 
 func murmur64(p string) uint64 {
-	return murmur3.Sum64([]byte(p))
+    return murmur3.Sum64([]byte(p))
 }
 ```
 
 看看执行结果：
 
-```shell
+```text
 map[7:999475 5:1000359 1:999945 6:1000200 3:1000193 9:1000765 2:1000044 \
 4:1000343 8:1000823 0:997853]
 ```
 
 偏差都在1/100以内，可以接受。读者在调研其它算法，并判断是否可以用来做灰度发布时，也应该从本节中提到的性能和均衡度两方面出发，对其进行考察。
+

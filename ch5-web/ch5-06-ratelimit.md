@@ -1,4 +1,4 @@
-# 5.6 Ratelimit 服务流量限制
+# 5.6 服务流量限制
 
 计算机程序可依据其瓶颈分为磁盘IO瓶颈型，CPU计算瓶颈型，网络带宽瓶颈型，分布式场景下有时候也会外部系统而导致自身瓶颈。
 
@@ -12,79 +12,79 @@ Web系统打交道最多的是网络，无论是接收，解析用户请求，�
 package main
 
 import (
-	"io"
-	"log"
-	"net/http"
+    "io"
+    "log"
+    "net/http"
 )
 
 func sayhello(wr http.ResponseWriter, r *http.Request) {
-	wr.WriteHeader(200)
-	io.WriteString(wr, "hello world")
+    wr.WriteHeader(200)
+    io.WriteString(wr, "hello world")
 }
 
 func main() {
-	http.HandleFunc("/", sayhello)
-	err := http.ListenAndServe(":9090", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe:", err)
-	}
+    http.HandleFunc("/", sayhello)
+    err := http.ListenAndServe(":9090", nil)
+    if err != nil {
+        log.Fatal("ListenAndServe:", err)
+    }
 }
 ```
 
 我们需要衡量一下这个Web服务的吞吐量，再具体一些，就是接口的QPS。借助wrk，在家用电脑 Macbook Pro上对这个 `hello world` 服务进行基准测试，Mac的硬件情况如下：
 
-```shell
+```text
 CPU: Intel(R) Core(TM) i5-5257U CPU @ 2.70GHz
 Core: 2
 Threads: 4
 
 Graphics/Displays:
-	  Chipset Model: Intel Iris Graphics 6100
-		  Resolution: 2560 x 1600 Retina
-	Memory Slots:
-		  Size: 4 GB
-		  Speed: 1867 MHz
-		  Size: 4 GB
-		  Speed: 1867 MHz
+      Chipset Model: Intel Iris Graphics 6100
+          Resolution: 2560 x 1600 Retina
+    Memory Slots:
+          Size: 4 GB
+          Speed: 1867 MHz
+          Size: 4 GB
+          Speed: 1867 MHz
 Storage:
-		  Size: 250.14 GB (250,140,319,744 bytes)
-		  Media Name: APPLE SSD SM0256G Media
-		  Size: 250.14 GB (250,140,319,744 bytes)
-		  Medium Type: SSD
+          Size: 250.14 GB (250,140,319,744 bytes)
+          Media Name: APPLE SSD SM0256G Media
+          Size: 250.14 GB (250,140,319,744 bytes)
+          Medium Type: SSD
 ```
 
 测试结果：
 
-```shell
+```text
 ~ ❯❯❯ wrk -c 10 -d 10s -t10 http://localhost:9090
 Running 10s test @ http://localhost:9090
   10 threads and 10 connections
-  Thread Stats   Avg	  Stdev	 Max   +/- Stdev
-	Latency   339.99us	1.28ms  44.43ms   98.29%
-	Req/Sec	 4.49k   656.81	 7.47k	73.36%
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   339.99us    1.28ms  44.43ms   98.29%
+    Req/Sec     4.49k   656.81     7.47k    73.36%
   449588 requests in 10.10s, 54.88MB read
 Requests/sec:  44513.22
-Transfer/sec:	  5.43MB
+Transfer/sec:      5.43MB
 
 ~ ❯❯❯ wrk -c 10 -d 10s -t10 http://localhost:9090
 Running 10s test @ http://localhost:9090
   10 threads and 10 connections
-  Thread Stats   Avg	  Stdev	 Max   +/- Stdev
-	Latency   334.76us	1.21ms  45.47ms   98.27%
-	Req/Sec	 4.42k   633.62	 6.90k	71.16%
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   334.76us    1.21ms  45.47ms   98.27%
+    Req/Sec     4.42k   633.62     6.90k    71.16%
   443582 requests in 10.10s, 54.15MB read
 Requests/sec:  43911.68
-Transfer/sec:	  5.36MB
+Transfer/sec:      5.36MB
 
 ~ ❯❯❯ wrk -c 10 -d 10s -t10 http://localhost:9090
 Running 10s test @ http://localhost:9090
   10 threads and 10 connections
-  Thread Stats   Avg	  Stdev	 Max   +/- Stdev
-	Latency   379.26us	1.34ms  44.28ms   97.62%
-	Req/Sec	 4.55k   591.64	 8.20k	76.37%
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   379.26us    1.34ms  44.28ms   97.62%
+    Req/Sec     4.55k   591.64     8.20k    76.37%
   455710 requests in 10.10s, 55.63MB read
 Requests/sec:  45118.57
-Transfer/sec:	  5.51MB
+Transfer/sec:      5.51MB
 ```
 
 多次测试的结果在4万左右的QPS浮动，响应时间最多也就是40ms左右，对于一个Web程序来说，这已经是很不错的成绩了，我们只是照抄了别人的示例代码，就完成了一个高性能的`hello world`服务器，是不是很有成就感？
@@ -108,9 +108,9 @@ Transfer/sec:	  5.51MB
 
 这两种方法看起来很像，不过还是有区别的。漏桶流出的速率固定，而令牌桶只要在桶中有令牌，那就可以拿。也就是说令牌桶是允许一定程度的并发的，比如同一个时刻，有100个用户请求，只要令牌桶中有100个令牌，那么这100个请求全都会放过去。令牌桶在桶中没有令牌的情况下也会退化为漏桶模型。
 
-![token bucket](../images/ch5-token-bucket.png)
+![token bucket](../.gitbook/assets/ch5-token-bucket.png)
 
-*图 5-12 令牌桶*
+_图 5-12 令牌桶_
 
 实际应用中令牌桶应用较为广泛，开源界流行的限流器大多数都是基于令牌桶思想的。并且在此基础上进行了一定程度的扩充，比如`github.com/juju/ratelimit`提供了几种不同特色的令牌桶填充方式：
 
@@ -138,7 +138,7 @@ func NewBucketWithRate(rate float64, capacity int64) *Bucket
 func (tb *Bucket) Take(count int64) time.Duration {}
 func (tb *Bucket) TakeAvailable(count int64) int64 {}
 func (tb *Bucket) TakeMaxDuration(count int64, maxWait time.Duration) (
-	time.Duration, bool,
+    time.Duration, bool,
 ) {}
 func (tb *Bucket) Wait(count int64) {}
 func (tb *Bucket) WaitMaxDuration(count int64, maxWait time.Duration) bool {}
@@ -158,17 +158,17 @@ var tokenBucket = make(chan struct{}, capacity)
 
 ```go
 fillToken := func() {
-	ticker := time.NewTicker(fillInterval)
-	for {
-		select {
-		case <-ticker.C:
-			select {
-			case tokenBucket <- struct{}{}:
-			default:
-			}
-			fmt.Println("current token cnt:", len(tokenBucket), time.Now())
-		}
-	}
+    ticker := time.NewTicker(fillInterval)
+    for {
+        select {
+        case <-ticker.C:
+            select {
+            case tokenBucket <- struct{}{}:
+            default:
+            }
+            fmt.Println("current token cnt:", len(tokenBucket), time.Now())
+        }
+    }
 }
 ```
 
@@ -178,38 +178,37 @@ fillToken := func() {
 package main
 
 import (
-	"fmt"
-	"time"
+    "fmt"
+    "time"
 )
 
 func main() {
-	var fillInterval = time.Millisecond * 10
-	var capacity = 100
-	var tokenBucket = make(chan struct{}, capacity)
+    var fillInterval = time.Millisecond * 10
+    var capacity = 100
+    var tokenBucket = make(chan struct{}, capacity)
 
-	fillToken := func() {
-		ticker := time.NewTicker(fillInterval)
-		for {
-			select {
-			case <-ticker.C:
-				select {
-				case tokenBucket <- struct{}{}:
-				default:
-				}
-				fmt.Println("current token cnt:", len(tokenBucket), time.Now())
-			}
-		}
-	}
+    fillToken := func() {
+        ticker := time.NewTicker(fillInterval)
+        for {
+            select {
+            case <-ticker.C:
+                select {
+                case tokenBucket <- struct{}{}:
+                default:
+                }
+                fmt.Println("current token cnt:", len(tokenBucket), time.Now())
+            }
+        }
+    }
 
-	go fillToken()
-	time.Sleep(time.Hour)
+    go fillToken()
+    time.Sleep(time.Hour)
 }
-
 ```
 
 看看运行结果：
 
-```shell
+```text
 current token cnt: 98 2018-06-16 18:17:50.234556981 +0800 CST m=+0.981524018
 current token cnt: 99 2018-06-16 18:17:50.243575354 +0800 CST m=+0.990542391
 current token cnt: 100 2018-06-16 18:17:50.254628067 +0800 CST m=+1.001595104
@@ -227,22 +226,22 @@ current token cnt: 100 2018-06-16 18:17:50.313970334 +0800 CST m=+1.060937371
 
 ```go
 func TakeAvailable(block bool) bool{
-	var takenResult bool
-	if block {
-		select {
-		case <-tokenBucket:
-			takenResult = true
-		}
-	} else {
-		select {
-		case <-tokenBucket:
-			takenResult = true
-		default:
-			takenResult = false
-		}
-	}
+    var takenResult bool
+    if block {
+        select {
+        case <-tokenBucket:
+            takenResult = true
+        }
+    } else {
+        select {
+        case <-tokenBucket:
+            takenResult = true
+        default:
+            takenResult = false
+        }
+    }
 
-	return takenResult
+    return takenResult
 }
 ```
 
@@ -266,3 +265,4 @@ cur = cur > cap ? cap : cur
 虽然性能指标很重要，但对用户提供服务时还应考虑服务整体的QoS。QoS全称是Quality of Service，顾名思义是服务质量。QoS包含有可用性、吞吐量、时延、时延变化和丢失等指标。一般来讲我们可以通过优化系统，来提高Web服务的CPU利用率，从而提高整个系统的吞吐量。但吞吐量提高的同时，用户体验是有可能变差的。用户角度比较敏感的除了可用性之外，还有时延。虽然你的系统吞吐量高，但半天刷不开页面，想必会造成大量的用户流失。所以在大公司的Web服务性能指标中，除了平均响应时延之外，还会把响应时间的95分位，99分位也拿出来作为性能标准。平均响应在提高CPU利用率没受到太大影响时，可能95分位、99分位的响应时间大幅度攀升了，那么这时候就要考虑提高这些CPU利用率所付出的代价是否值得了。
 
 在线系统的机器一般都会保持CPU有一定的余裕。
+

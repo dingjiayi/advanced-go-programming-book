@@ -8,24 +8,24 @@
 
 Go语言中数值类型和C语言数据类型基本上是相似的，以下是它们的对应关系表2-1所示。
 
-C语言类型               | CGO类型      | Go语言类型
----------------------- | ----------- | ---------
-char                   | C.char      | byte
-singed char            | C.schar     | int8
-unsigned char          | C.uchar     | uint8
-short                  | C.short     | int16
-unsigned short         | C.ushort     | uint16
-int                    | C.int       | int32
-unsigned int           | C.uint      | uint32
-long                   | C.long      | int32
-unsigned long          | C.ulong     | uint32
-long long int          | C.longlong  | int64
-unsigned long long int | C.ulonglong | uint64
-float                  | C.float     | float32
-double                 | C.double    | float64
-size_t                 | C.size_t    | uint
+| C语言类型 | CGO类型 | Go语言类型 |
+| :--- | :--- | :--- |
+| char | C.char | byte |
+| singed char | C.schar | int8 |
+| unsigned char | C.uchar | uint8 |
+| short | C.short | int16 |
+| unsigned short | C.ushort | uint16 |
+| int | C.int | int32 |
+| unsigned int | C.uint | uint32 |
+| long | C.long | int32 |
+| unsigned long | C.ulong | uint32 |
+| long long int | C.longlong | int64 |
+| unsigned long long int | C.ulonglong | uint64 |
+| float | C.float | float32 |
+| double | C.double | float64 |
+| size\_t | C.size\_t | uint |
 
-*表 2-1 Go语言和C语言类型对比*
+_表 2-1 Go语言和C语言类型对比_
 
 需要注意的是，虽然在C语言中`int`、`short`等类型没有明确定义内存大小，但是在CGO中它们的内存大小是确定的。在CGO中，C语言的`int`和`long`类型都是对应4个字节的内存大小，`size_t`类型可以当作Go语言`uint`无符号整数类型对待。
 
@@ -48,20 +48,20 @@ typedef double GoFloat64;
 
 除了`GoInt`和`GoUint`之外，我们并不推荐直接访问`GoInt32`、`GoInt64`等类型。更好的做法是通过C语言的C99标准引入的`<stdint.h>`头文件。为了提高C语言的可移植性，在`<stdint.h>`文件中，不但每个数值类型都提供了明确内存大小，而且和Go语言的类型命名更加一致。Go语言类型`<stdint.h>`头文件类型对比如表2-2所示。
 
-C语言类型 | CGO类型     | Go语言类型
--------- | ---------- | ---------
-int8_t   | C.int8_t   | int8
-uint8_t  | C.uint8_t  | uint8
-int16_t  | C.int16_t  | int16
-uint16_t | C.uint16_t | uint16
-int32_t  | C.int32_t  | int32
-uint32_t | C.uint32_t | uint32
-int64_t  | C.int64_t  | int64
-uint64_t | C.uint64_t | uint64
+| C语言类型 | CGO类型 | Go语言类型 |
+| :--- | :--- | :--- |
+| int8\_t | C.int8\_t | int8 |
+| uint8\_t | C.uint8\_t | uint8 |
+| int16\_t | C.int16\_t | int16 |
+| uint16\_t | C.uint16\_t | uint16 |
+| int32\_t | C.int32\_t | int32 |
+| uint32\_t | C.uint32\_t | uint32 |
+| int64\_t | C.int64\_t | int64 |
+| uint64\_t | C.uint64\_t | uint64 |
 
-*表 2-2 `<stdint.h>`类型对比*
+_表 2-2 `<stdint.h>`类型对比_
 
-前文说过，如果C语言的类型是由多个关键字组成，则无法通过虚拟的“C”包直接访问(比如C语言的`unsigned short`不能直接通过`C.unsigned short`访问)。但是，在`<stdint.h>`中通过使用C语言的`typedef`关键字将`unsigned short`重新定义为`uint16_t`这样一个单词的类型后，我们就可以通过`C.uint16_t`访问原来的`unsigned short`类型了。对于比较复杂的C语言类型，推荐使用`typedef`关键字提供一个规则的类型命名，这样更利于在CGO中访问。
+前文说过，如果C语言的类型是由多个关键字组成，则无法通过虚拟的“C”包直接访问\(比如C语言的`unsigned short`不能直接通过`C.unsigned short`访问\)。但是，在`<stdint.h>`中通过使用C语言的`typedef`关键字将`unsigned short`重新定义为`uint16_t`这样一个单词的类型后，我们就可以通过`C.uint16_t`访问原来的`unsigned short`类型了。对于比较复杂的C语言类型，推荐使用`typedef`关键字提供一个规则的类型命名，这样更利于在CGO中访问。
 
 ## 2.3.2 Go 字符串和切片
 
@@ -120,17 +120,17 @@ C语言的结构体、联合、枚举类型不能作为匿名成员被嵌入到G
 ```go
 /*
 struct A {
-	int i;
-	float f;
+    int i;
+    float f;
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var a C.struct_A
-	fmt.Println(a.i)
-	fmt.Println(a.f)
+    var a C.struct_A
+    fmt.Println(a.i)
+    fmt.Println(a.f)
 }
 ```
 
@@ -139,15 +139,15 @@ func main() {
 ```go
 /*
 struct A {
-	int type; // type 是 Go 语言的关键字
+    int type; // type 是 Go 语言的关键字
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var a C.struct_A
-	fmt.Println(a._type) // _type 对应 type
+    var a C.struct_A
+    fmt.Println(a._type) // _type 对应 type
 }
 ```
 
@@ -156,16 +156,16 @@ func main() {
 ```go
 /*
 struct A {
-	int   type;  // type 是 Go 语言的关键字
-	float _type; // 将屏蔽CGO对 type 成员的访问
+    int   type;  // type 是 Go 语言的关键字
+    float _type; // 将屏蔽CGO对 type 成员的访问
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var a C.struct_A
-	fmt.Println(a._type) // _type 对应 _type
+    var a C.struct_A
+    fmt.Println(a._type) // _type 对应 _type
 }
 ```
 
@@ -174,17 +174,17 @@ C语言结构体中位字段对应的成员无法在Go语言中访问，如果�
 ```go
 /*
 struct A {
-	int   size: 10; // 位字段无法访问
-	float arr[];    // 零长的数组也无法访问
+    int   size: 10; // 位字段无法访问
+    float arr[];    // 零长的数组也无法访问
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var a C.struct_A
-	fmt.Println(a.size) // 错误: 位字段无法访问
-	fmt.Println(a.arr)  // 错误: 零长的数组也无法访问
+    var a C.struct_A
+    fmt.Println(a.size) // 错误: 位字段无法访问
+    fmt.Println(a.arr)  // 错误: 零长的数组也无法访问
 }
 ```
 
@@ -197,45 +197,45 @@ func main() {
 #include <stdint.h>
 
 union B1 {
-	int i;
-	float f;
+    int i;
+    float f;
 };
 
 union B2 {
-	int8_t i8;
-	int64_t i64;
+    int8_t i8;
+    int64_t i64;
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var b1 C.union_B1;
-	fmt.Printf("%T\n", b1) // [4]uint8
+    var b1 C.union_B1;
+    fmt.Printf("%T\n", b1) // [4]uint8
 
-	var b2 C.union_B2;
-	fmt.Printf("%T\n", b2) // [8]uint8
+    var b2 C.union_B2;
+    fmt.Printf("%T\n", b2) // [8]uint8
 }
 ```
 
-如果需要操作C语言的联合类型变量，一般有三种方法：第一种是在C语言中定义辅助函数；第二种是通过Go语言的"encoding/binary"手工解码成员(需要注意大端小端问题)；第三种是使用`unsafe`包强制转型为对应类型(这是性能最好的方式)。下面展示通过`unsafe`包访问联合类型成员的方式：
+如果需要操作C语言的联合类型变量，一般有三种方法：第一种是在C语言中定义辅助函数；第二种是通过Go语言的"encoding/binary"手工解码成员\(需要注意大端小端问题\)；第三种是使用`unsafe`包强制转型为对应类型\(这是性能最好的方式\)。下面展示通过`unsafe`包访问联合类型成员的方式：
 
 ```go
 /*
 #include <stdint.h>
 
 union B {
-	int i;
-	float f;
+    int i;
+    float f;
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var b C.union_B;
-	fmt.Println("b.i:", *(*C.int)(unsafe.Pointer(&b)))
-	fmt.Println("b.f:", *(*C.float)(unsafe.Pointer(&b)))
+    var b C.union_B;
+    fmt.Println("b.i:", *(*C.int)(unsafe.Pointer(&b)))
+    fmt.Println("b.f:", *(*C.float)(unsafe.Pointer(&b)))
 }
 ```
 
@@ -246,18 +246,18 @@ func main() {
 ```go
 /*
 enum C {
-	ONE,
-	TWO,
+    ONE,
+    TWO,
 };
 */
 import "C"
 import "fmt"
 
 func main() {
-	var c C.enum_C = C.TWO
-	fmt.Println(c)
-	fmt.Println(C.ONE)
-	fmt.Println(C.TWO)
+    var c C.enum_C = C.TWO
+    fmt.Println(c)
+    fmt.Println(C.ONE)
+    fmt.Println(C.TWO)
 }
 ```
 
@@ -268,7 +268,6 @@ func main() {
 在C语言中，数组名其实对应于一个指针，指向特定类型特定长度的一段内存，但是这个指针不能被修改；当把数组名传递给一个函数时，实际上传递的是数组第一个元素的地址。为了讨论方便，我们将一段特定长度的内存统称为数组。C语言的字符串是一个char类型的数组，字符串的长度需要根据表示结尾的NULL字符的位置确定。C语言中没有切片类型。
 
 在Go语言中，数组是一种值类型，而且数组的长度是数组类型的一个部分。Go语言字符串对应一段长度确定的只读byte类型的内存。Go语言的切片则是一个简化版的动态数组。
-
 
 Go语言和C语言的数组、字符串和切片之间的相互转换可以简化为Go语言的切片和C语言中指向一定长度内存的指针之间的转换。
 
@@ -328,27 +327,27 @@ char *s = "Hello";
 */
 import "C"
 import (
-	"reflect"
-	"unsafe"
+    "reflect"
+    "unsafe"
 )
 func main() {
-	// 通过 reflect.SliceHeader 转换
-	var arr0 []byte
-	var arr0Hdr = (*reflect.SliceHeader)(unsafe.Pointer(&arr0))
-	arr0Hdr.Data = uintptr(unsafe.Pointer(&C.arr[0]))
-	arr0Hdr.Len = 10
-	arr0Hdr.Cap = 10
+    // 通过 reflect.SliceHeader 转换
+    var arr0 []byte
+    var arr0Hdr = (*reflect.SliceHeader)(unsafe.Pointer(&arr0))
+    arr0Hdr.Data = uintptr(unsafe.Pointer(&C.arr[0]))
+    arr0Hdr.Len = 10
+    arr0Hdr.Cap = 10
 
-	// 通过切片语法转换
-	arr1 := (*[31]byte)(unsafe.Pointer(&C.arr[0]))[:10:10]
+    // 通过切片语法转换
+    arr1 := (*[31]byte)(unsafe.Pointer(&C.arr[0]))[:10:10]
 
-	var s0 string
-	var s0Hdr = (*reflect.StringHeader)(unsafe.Pointer(&s0))
-	s0Hdr.Data = uintptr(unsafe.Pointer(C.s))
-	s0Hdr.Len = int(C.strlen(C.s))
+    var s0 string
+    var s0Hdr = (*reflect.StringHeader)(unsafe.Pointer(&s0))
+    s0Hdr.Data = uintptr(unsafe.Pointer(C.s))
+    s0Hdr.Len = int(C.strlen(C.s))
 
-	sLen := int(C.strlen(C.s))
-    	s1 := string((*[31]byte)(unsafe.Pointer(C.s))[:sLen:sLen])
+    sLen := int(C.strlen(C.s))
+        s1 := string((*[31]byte)(unsafe.Pointer(C.s))[:sLen:sLen])
 }
 ```
 
@@ -385,10 +384,9 @@ p = (*X)(unsafe.Pointer(q)) // *Y => *X
 
 下面是指针间的转换流程的示意图：
 
-![](../images/ch2-1-x-ptr-to-y-ptr.uml.png)
+![](../.gitbook/assets/ch2-1-x-ptr-to-y-ptr.uml.png)
 
-*图 2-1 X类型指针转Y类型指针*
-
+_图 2-1 X类型指针转Y类型指针_
 
 任何类型的指针都可以通过强制转换为`unsafe.Pointer`指针类型去掉原有的类型信息，然后再重新赋予新的指针类型而达到指针间的转换的目的。
 
@@ -400,10 +398,9 @@ p = (*X)(unsafe.Pointer(q)) // *Y => *X
 
 下面流程图演示了如何实现int32类型到C语言的`char*`字符串指针类型的相互转换：
 
-![](../images/ch2-2-int32-to-char-ptr.uml.png)
+![](../.gitbook/assets/ch2-2-int32-to-char-ptr.uml.png)
 
-*图 2-2 int32和`char*`指针转换*
-
+_图 2-2 int32和\`char_\`指针转换\*
 
 转换分为几个阶段，在每个阶段实现一个小目标：首先是int32到uintptr类型，然后是uintptr到`unsafe.Pointr`指针类型，最后是`unsafe.Pointr`指针类型到`*C.char`类型。
 
@@ -429,9 +426,9 @@ pHdr.Cap = qHdr.Cap * unsafe.Sizeof(q[0]) / unsafe.Sizeof(p[0])
 
 下面演示了切片间的转换的具体流程：
 
-![](../images/ch2-3-x-slice-to-y-slice.uml.png)
+![](../.gitbook/assets/ch2-3-x-slice-to-y-slice.uml.png)
 
-*图 2-3 X类型切片转Y类型切片*
-
+_图 2-3 X类型切片转Y类型切片_
 
 针对CGO中常用的功能，作者封装了 "github.com/chai2010/cgo" 包，提供基本的转换功能，具体的细节可以参考实现代码。
+

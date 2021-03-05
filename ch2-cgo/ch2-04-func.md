@@ -9,13 +9,13 @@
 ```go
 /*
 static int add(int a, int b) {
-	return a+b;
+    return a+b;
 }
 */
 import "C"
 
 func main() {
-	C.add(1, 1)
+    C.add(1, 1)
 }
 ```
 
@@ -28,15 +28,15 @@ func main() {
 ```go
 /*
 static int div(int a, int b) {
-	return a/b;
+    return a/b;
 }
 */
 import "C"
 import "fmt"
 
 func main() {
-	v := C.div(6, 3)
-	fmt.Println(v)
+    v := C.div(6, 3)
+    fmt.Println(v)
 }
 ```
 
@@ -50,11 +50,11 @@ func main() {
 #include <errno.h>
 
 int div(int a, int b) {
-	if(b == 0) {
-		errno = EINVAL;
-		return 0;
-	}
-	return a/b;
+    if(b == 0) {
+        errno = EINVAL;
+        return 0;
+    }
+    return a/b;
 }
 ```
 
@@ -65,28 +65,28 @@ CGO也针对`<errno.h>`标准库的`errno`宏做的特殊支持：在CGO调用C�
 #include <errno.h>
 
 static int div(int a, int b) {
-	if(b == 0) {
-		errno = EINVAL;
-		return 0;
-	}
-	return a/b;
+    if(b == 0) {
+        errno = EINVAL;
+        return 0;
+    }
+    return a/b;
 }
 */
 import "C"
 import "fmt"
 
 func main() {
-	v0, err0 := C.div(2, 1)
-	fmt.Println(v0, err0)
+    v0, err0 := C.div(2, 1)
+    fmt.Println(v0, err0)
 
-	v1, err1 := C.div(1, 0)
-	fmt.Println(v1, err1)
+    v1, err1 := C.div(1, 0)
+    fmt.Println(v1, err1)
 }
 ```
 
 运行这个代码将会产生以下输出：
 
-```
+```text
 2 <nil>
 0 invalid argument
 ```
@@ -111,8 +111,8 @@ import "C"
 import "fmt"
 
 func main() {
-	_, err := C.noreturn()
-	fmt.Println(err)
+    _, err := C.noreturn()
+    fmt.Println(err)
 }
 ```
 
@@ -126,14 +126,14 @@ import "C"
 import "fmt"
 
 func main() {
-	v, _ := C.noreturn()
-	fmt.Printf("%#v", v)
+    v, _ := C.noreturn()
+    fmt.Printf("%#v", v)
 }
 ```
 
 运行这个代码将会产生以下输出：
 
-```
+```text
 main._Ctype_void{}
 ```
 
@@ -145,20 +145,19 @@ import "C"
 import "fmt"
 
 func main() {
-	fmt.Println(C.noreturn())
+    fmt.Println(C.noreturn())
 }
 ```
 
 运行这个代码将会产生以下输出：
 
-```
+```text
 []
 ```
 
 其实在CGO生成的代码中，`_Ctype_void`类型对应一个0长的数组类型`[0]byte`，因此`fmt.Println`输出的是一个表示空数值的方括弧。
 
 以上有效特性虽然看似有些无聊，但是通过这些例子我们可以精确掌握CGO代码的边界，可以从更深层次的设计的角度来思考产生这些奇怪特性的原因。
-
 
 ## 2.4.4 C调用Go导出函数
 
@@ -171,7 +170,7 @@ import "C"
 
 //export add
 func add(a, b C.int) C.int {
-	return a+b
+    return a+b
 }
 ```
 
@@ -183,7 +182,7 @@ CGO生成的 `_cgo_export.h` 文件会包含导出后的C语言函数的声明�
 #include "_cgo_export.h"
 
 void foo() {
-	add(1, 1);
+    add(1, 1);
 }
 ```
 

@@ -12,21 +12,21 @@
 package main
 
 import (
-	"fmt"
+    "fmt"
 )
 
 func main() {
-	nums := make([]int, 5)
-	for i := 0; i < len(nums); i++ {
-		nums[i] = i * i
-	}
-	fmt.Println(nums)
+    nums := make([]int, 5)
+    for i := 0; i < len(nums); i++ {
+        nums[i] = i * i
+    }
+    fmt.Println(nums)
 }
 ```
 
 命令行进入包所在目录，然后输入`dlv debug`命令进入调试：
 
-```
+```text
 $ dlv debug
 Type 'help' for list of commands.
 (dlv)
@@ -34,7 +34,7 @@ Type 'help' for list of commands.
 
 输入help命令可以查看到Delve提供的调试命令列表：
 
-```
+```text
 (dlv) help
 The following commands are available:
     args ------------------------ Print function arguments.
@@ -80,14 +80,14 @@ Type help followed by a command for full documentation.
 
 每个Go程序的入口是main.main函数，我们可以用break在此设置一个断点：
 
-```
+```text
 (dlv) break main.main
 Breakpoint 1 set at 0x10ae9b8 for main.main() ./main.go:7
 ```
 
 然后通过breakpoints查看已经设置的所有断点：
 
-```
+```text
 (dlv) breakpoints
 Breakpoint unrecovered-panic at 0x102a380 for runtime.startpanic()
     /usr/local/go/src/runtime/panic.go:588 (0)
@@ -99,7 +99,7 @@ Breakpoint 1 at 0x10ae9b8 for main.main() ./main.go:7 (0)
 
 通过vars命令可以查看全部包级的变量。因为最终的目标程序可能含有大量的全局变量，我们可以通过一个正则参数选择想查看的全局变量：
 
-```
+```text
 (dlv) vars main
 main.initdone· = 2
 runtime.main_init_done = chan bool 0/0
@@ -109,7 +109,7 @@ runtime.mainStarted = true
 
 然后就可以通过continue命令让程序运行到下一个断点处：
 
-```
+```text
 (dlv) continue
 > main.main() ./main.go:7 (hits goroutine(1):1 total:1) (PC: 0x10ae9b8)
      2:
@@ -128,7 +128,7 @@ runtime.mainStarted = true
 
 输入next命令单步执行进入main函数内部：
 
-```
+```text
 (dlv) next
 > main.main() ./main.go:8 (PC: 0x10ae9cf)
      3: import (
@@ -147,7 +147,7 @@ runtime.mainStarted = true
 
 进入函数之后可以通过args和locals命令查看函数的参数和局部变量：
 
-```
+```text
 (dlv) args
 (no args)
 (dlv) locals
@@ -158,7 +158,7 @@ nums = []int len: 842350763880, cap: 17491881, nil
 
 再次输入next命令单步执行后就可以查看到nums切片初始化之后的结果了：
 
-```
+```text
 (dlv) next
 > main.main() ./main.go:9 (PC: 0x10aea12)
      4:         "fmt"
@@ -181,7 +181,7 @@ i = 17601536
 
 下面我们通过组合使用break和condition命令，在循环内部设置一个条件断点，当循环变量i等于3时断点生效：
 
-```
+```text
 (dlv) break main.go:10
 Breakpoint 2 set at 0x10aea33 for main.main() ./main.go:10
 (dlv) condition 2 i==3
@@ -190,7 +190,7 @@ Breakpoint 2 set at 0x10aea33 for main.main() ./main.go:10
 
 然后通过continue执行到刚设置的条件断点，并且输出局部变量：
 
-```
+```text
 (dlv) continue
 > main.main() ./main.go:10 (hits goroutine(1):1 total:1) (PC: 0x10aea33)
      5: )
@@ -214,7 +214,7 @@ i = 3
 
 我们还可以通过stack查看当前执行函数的栈帧信息：
 
-```
+```text
 (dlv) stack
 0  0x00000000010aea33 in main.main
    at ./main.go:10
@@ -227,7 +227,7 @@ i = 3
 
 或者通过goroutine和goroutines命令查看当前Goroutine相关的信息：
 
-```
+```text
 (dlv) goroutine
 Thread 101686 at ./main.go:10
 Goroutine 1:
@@ -265,9 +265,9 @@ func asmSayHello()
 
 在main函数中调用汇编语言实现的asmSayHello函数输出一个字符串。
 
-asmSayHello函数在main_amd64.s文件中实现：
+asmSayHello函数在main\_amd64.s文件中实现：
 
-```
+```text
 #include "textflag.h"
 #include "funcdata.h"
 
@@ -278,17 +278,17 @@ GLOBL text<>(SB),NOPTR,$16
 
 // func asmSayHello()
 TEXT ·asmSayHello(SB), $16-0
-	NO_LOCAL_POINTERS
-	MOVQ $text<>+0(SB), AX
-	MOVQ AX, (SP)
-	MOVQ $16, 8(SP)
-	CALL runtime·printstring(SB)
-	RET
+    NO_LOCAL_POINTERS
+    MOVQ $text<>+0(SB), AX
+    MOVQ AX, (SP)
+    MOVQ $16, 8(SP)
+    CALL runtime·printstring(SB)
+    RET
 ```
 
 参考前面的调试流程，在执行到main函数断点时，可以disassemble反汇编命令查看main函数对应的汇编代码：
 
-```
+```text
 (dlv) break main.main
 Breakpoint 1 set at 0x105011f for main.main() ./main.go:3
 (dlv) continue
@@ -321,7 +321,7 @@ TEXT main.main(SB) /path/to/pkg/main.go
 
 现在我们依然用break命令在asmSayHello函数设置断点，并且输入continue命令让调试器执行到断点位置停下：
 
-```
+```text
 (dlv) break main.asmSayHello
 Breakpoint 2 set at 0x10501bf for main.asmSayHello() ./main_amd64.s:10
 (dlv) continue
@@ -342,7 +342,7 @@ Breakpoint 2 set at 0x10501bf for main.asmSayHello() ./main_amd64.s:10
 
 此时我们可以通过regs查看全部的寄存器状态：
 
-```
+```text
 (dlv) regs
        rax = 0x0000000001050110
        rbx = 0x0000000000000000
@@ -368,7 +368,7 @@ Breakpoint 2 set at 0x10501bf for main.asmSayHello() ./main_amd64.s:10
 
 因为AMD64的各种寄存器非常多，项目的信息中刻意省略了非通用的寄存器。如果再单步执行到13行时，可以发现AX寄存器值的变化。
 
-```
+```text
 (dlv) regs
        rax = 0x00000000010a4060
        rbx = 0x0000000000000000
@@ -379,7 +379,7 @@ Breakpoint 2 set at 0x10501bf for main.asmSayHello() ./main_amd64.s:10
 
 因此我们可以推断汇编程序内部定义的`text<>`数据的地址为0x00000000010a4060。我们可以用过print命令来查看该内存内的数据：
 
-```
+```text
 (dlv) print *(*[5]byte)(uintptr(0x00000000010a4060))
 [5]uint8 [72,101,108,108,111]
 (dlv)
@@ -388,3 +388,4 @@ Breakpoint 2 set at 0x10501bf for main.asmSayHello() ./main_amd64.s:10
 我们可以发现输出的`[5]uint8 [72,101,108,108,111]`刚好是对应“Hello”字符串。通过类似的方法，我们可以通过查看SP对应的栈指针位置，然后查看栈中局部变量的值。
 
 至此我们就掌握了Go汇编程序的简单调试技术。
+

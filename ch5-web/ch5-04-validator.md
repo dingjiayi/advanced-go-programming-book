@@ -1,10 +1,10 @@
-# 5.4 validator请求校验
+# 5.4 请求校验
 
-社区里曾经有人用*图 5-10*来嘲笑PHP：
+社区里曾经有人用_图 5-10_来嘲笑PHP：
 
-![validate 流程](../images/ch6-04-validate.jpg)
+![validate &#x6D41;&#x7A0B;](../.gitbook/assets/ch6-04-validate.jpg)
 
-*图 5-10 validator流程*
+_图 5-10 validator流程_
 
 这其实是一个语言无关的场景，需要进行字段校验的情况有很多，Web系统的Form或JSON提交只是一个典型的例子。我们用Go来写一个类似上图的校验示例。然后研究怎么一步步对其进行改进。
 
@@ -14,31 +14,31 @@
 
 ```go
 type RegisterReq struct {
-	Username       string   `json:"username"`
-	PasswordNew    string   `json:"password_new"`
-	PasswordRepeat string   `json:"password_repeat"`
-	Email          string   `json:"email"`
+    Username       string   `json:"username"`
+    PasswordNew    string   `json:"password_new"`
+    PasswordRepeat string   `json:"password_repeat"`
+    Email          string   `json:"email"`
 }
 
 func register(req RegisterReq) error{
-	if len(req.Username) > 0 {
-		if len(req.PasswordNew) > 0 && len(req.PasswordRepeat) > 0 {
-			if req.PasswordNew == req.PasswordRepeat {
-				if emailFormatValid(req.Email) {
-					createUser()
-					return nil
-				} else {
-					return errors.New("invalid email")
-				}
-			} else {
-				return errors.New("password and reinput must be the same")
-			}
-		} else {
-			return errors.New("password and password reinput must be longer than 0")
-		}
-	} else {
-		return errors.New("length of username cannot be 0")
-	}
+    if len(req.Username) > 0 {
+        if len(req.PasswordNew) > 0 && len(req.PasswordRepeat) > 0 {
+            if req.PasswordNew == req.PasswordRepeat {
+                if emailFormatValid(req.Email) {
+                    createUser()
+                    return nil
+                } else {
+                    return errors.New("invalid email")
+                }
+            } else {
+                return errors.New("password and reinput must be the same")
+            }
+        } else {
+            return errors.New("password and password reinput must be longer than 0")
+        }
+    } else {
+        return errors.New("length of username cannot be 0")
+    }
 }
 ```
 
@@ -48,24 +48,24 @@ func register(req RegisterReq) error{
 
 ```go
 func register(req RegisterReq) error{
-	if len(req.Username) == 0 {
-		return errors.New("length of username cannot be 0")
-	}
+    if len(req.Username) == 0 {
+        return errors.New("length of username cannot be 0")
+    }
 
-	if len(req.PasswordNew) == 0 || len(req.PasswordRepeat) == 0 {
-		return errors.New("password and password reinput must be longer than 0")
-	}
+    if len(req.PasswordNew) == 0 || len(req.PasswordRepeat) == 0 {
+        return errors.New("password and password reinput must be longer than 0")
+    }
 
-	if req.PasswordNew != req.PasswordRepeat {
-		return errors.New("password and reinput must be the same")
-	}
+    if req.PasswordNew != req.PasswordRepeat {
+        return errors.New("password and reinput must be the same")
+    }
 
-	if emailFormatValid(req.Email) {
-		return errors.New("invalid email")
-	}
+    if emailFormatValid(req.Email) {
+        return errors.New("invalid email")
+    }
 
-	createUser()
-	return nil
+    createUser()
+    return nil
 }
 ```
 
@@ -77,7 +77,7 @@ func register(req RegisterReq) error{
 
 这里我们引入一个新的validator库：
 
-> https://github.com/go-playground/validator
+> [https://github.com/go-playground/validator](https://github.com/go-playground/validator)
 
 使用 `go get github.com/go-playground/validator/v10` 可以下载 validator 库。
 
@@ -85,27 +85,26 @@ func register(req RegisterReq) error{
 import "github.com/go-playground/validator/v10"
 
 type RegisterReq struct {
-	// 字符串的 gt=0 表示长度必须 > 0，gt = greater than
-	Username       string   `validate:"gt=0"`
-	// 同上
-	PasswordNew    string   `validate:"gt=0"`
-	// eqfield 跨字段相等校验
-	PasswordRepeat string   `validate:"eqfield=PasswordNew"`
-	// 合法 email 格式校验
-	Email          string   `validate:"email"`
+    // 字符串的 gt=0 表示长度必须 > 0，gt = greater than
+    Username       string   `validate:"gt=0"`
+    // 同上
+    PasswordNew    string   `validate:"gt=0"`
+    // eqfield 跨字段相等校验
+    PasswordRepeat string   `validate:"eqfield=PasswordNew"`
+    // 合法 email 格式校验
+    Email          string   `validate:"email"`
 }
 
 var validate = validator.New()
 
 func validateFunc(req RegisterReq) error {
-	err := validate.Struct(req)
-	if err != nil {
-		doSomething()
-		return err
-	}
-	...
+    err := validate.Struct(req)
+    if err != nil {
+        doSomething()
+        return err
+    }
+    ...
 }
-
 ```
 
 这样就不需要在每个请求进入业务逻辑之前都写重复的`validate()`函数了。本例中只列出了这个校验器非常简单的几个功能。
@@ -116,10 +115,10 @@ func validateFunc(req RegisterReq) error {
 //...
 
 var req = RegisterReq {
-	Username       : "Xargin",
-	PasswordNew    : "ohno",
-	PasswordRepeat : "ohn",
-	Email          : "alex@abc.com",
+    Username       : "Xargin",
+    PasswordNew    : "ohno",
+    PasswordRepeat : "ohn",
+    Email          : "alex@abc.com",
 }
 
 err := validateFunc(req)
@@ -137,19 +136,19 @@ fmt.Println(err)
 
 ```go
 type Nested struct {
-	Email string `validate:"email"`
+    Email string `validate:"email"`
 }
 type T struct {
-	Age	int `validate:"eq=10"`
-	Nested Nested
+    Age    int `validate:"eq=10"`
+    Nested Nested
 }
 ```
 
-把这个结构体画成一棵树，见*图 5-11*：
+把这个结构体画成一棵树，见_图 5-11_：
 
-![struct-tree](../images/ch6-04-validate-struct-tree.png)
+![struct-tree](../.gitbook/assets/ch6-04-validate-struct-tree.png)
 
-*图 5-11 validator 树*
+_图 5-11 validator 树_
 
 从字段校验的需求来讲，无论我们采用深度优先搜索还是广度优先搜索来对这棵结构体树来进行遍历，都是可以的。
 
@@ -159,81 +158,81 @@ type T struct {
 package main
 
 import (
-	"fmt"
-	"reflect"
-	"regexp"
-	"strconv"
-	"strings"
+    "fmt"
+    "reflect"
+    "regexp"
+    "strconv"
+    "strings"
 )
 
 type Nested struct {
-	Email string `validate:"email"`
+    Email string `validate:"email"`
 }
 type T struct {
-	Age	int `validate:"eq=10"`
-	Nested Nested
+    Age    int `validate:"eq=10"`
+    Nested Nested
 }
 
 func validateEmail(input string) bool {
-	if pass, _ := regexp.MatchString(
-		`^([\w\.\_]{2,10})@(\w{1,}).([a-z]{2,4})$`, input,
-	); pass {
-		return true
-	}
-	return false
+    if pass, _ := regexp.MatchString(
+        `^([\w\.\_]{2,10})@(\w{1,}).([a-z]{2,4})$`, input,
+    ); pass {
+        return true
+    }
+    return false
 }
 
 func validate(v interface{}) (bool, string) {
-	validateResult := true
-	errmsg := "success"
-	vt := reflect.TypeOf(v)
-	vv := reflect.ValueOf(v)
-	for i := 0; i < vv.NumField(); i++ {
-		fieldVal := vv.Field(i)
-		tagContent := vt.Field(i).Tag.Get("validate")
-		k := fieldVal.Kind()
+    validateResult := true
+    errmsg := "success"
+    vt := reflect.TypeOf(v)
+    vv := reflect.ValueOf(v)
+    for i := 0; i < vv.NumField(); i++ {
+        fieldVal := vv.Field(i)
+        tagContent := vt.Field(i).Tag.Get("validate")
+        k := fieldVal.Kind()
 
-		switch k {
-		case reflect.Int:
-			val := fieldVal.Int()
-			tagValStr := strings.Split(tagContent, "=")
-			tagVal, _ := strconv.ParseInt(tagValStr[1], 10, 64)
-			if val != tagVal {
-				errmsg = "validate int failed, tag is: "+ strconv.FormatInt(
-					tagVal, 10,
-				)
-				validateResult = false
-			}
-		case reflect.String:
-			val := fieldVal.String()
-			tagValStr := tagContent
-			switch tagValStr {
-			case "email":
-				nestedResult := validateEmail(val)
-				if nestedResult == false {
-					errmsg = "validate mail failed, field val is: "+ val
-					validateResult = false
-				}
-			}
-		case reflect.Struct:
-			// 如果有内嵌的 struct，那么深度优先遍历
-			// 就是一个递归过程
-			valInter := fieldVal.Interface()
-			nestedResult, msg := validate(valInter)
-			if nestedResult == false {
-				validateResult = false
-				errmsg = msg
-			}
-		}
-	}
-	return validateResult, errmsg
+        switch k {
+        case reflect.Int:
+            val := fieldVal.Int()
+            tagValStr := strings.Split(tagContent, "=")
+            tagVal, _ := strconv.ParseInt(tagValStr[1], 10, 64)
+            if val != tagVal {
+                errmsg = "validate int failed, tag is: "+ strconv.FormatInt(
+                    tagVal, 10,
+                )
+                validateResult = false
+            }
+        case reflect.String:
+            val := fieldVal.String()
+            tagValStr := tagContent
+            switch tagValStr {
+            case "email":
+                nestedResult := validateEmail(val)
+                if nestedResult == false {
+                    errmsg = "validate mail failed, field val is: "+ val
+                    validateResult = false
+                }
+            }
+        case reflect.Struct:
+            // 如果有内嵌的 struct，那么深度优先遍历
+            // 就是一个递归过程
+            valInter := fieldVal.Interface()
+            nestedResult, msg := validate(valInter)
+            if nestedResult == false {
+                validateResult = false
+                errmsg = msg
+            }
+        }
+    }
+    return validateResult, errmsg
 }
 
 func main() {
-	var a = T{Age: 10, Nested: Nested{Email: "abc@abc.com"}}
+    var a = T{Age: 10, Nested: Nested{Email: "abc@abc.com"}}
 
-	validateResult, errmsg := validate(a)
-	fmt.Println(validateResult, errmsg)
+    validateResult, errmsg := validate(a)
+    fmt.Println(validateResult, errmsg)
 }
 ```
 
@@ -242,3 +241,4 @@ func main() {
 在前一小节中介绍的开源校验组件在功能上要远比我们这里的例子复杂的多。但原理很简单，就是用反射对结构体进行树形遍历。有心的读者这时候可能会产生一个问题，我们对结构体进行校验时大量使用了反射，而Go的反射在性能上不太出众，有时甚至会影响到我们程序的性能。这样的考虑确实有一些道理，但需要对结构体进行大量校验的场景往往出现在Web服务，这里并不一定是程序的性能瓶颈所在，实际的效果还是要从pprof中做更精确的判断。
 
 如果基于反射的校验真的成为了你服务的性能瓶颈怎么办？现在也有一种思路可以避免反射：使用Go内置的Parser对源代码进行扫描，然后根据结构体的定义生成校验代码。我们可以将所有需要校验的结构体放在单独的包内。这就交给读者自己去探索了。
+

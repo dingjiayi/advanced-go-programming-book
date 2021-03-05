@@ -18,18 +18,18 @@
 package main
 
 func main() {
-	panic("goid")
+    panic("goid")
 }
 ```
 
 运行后将输出以下信息：
 
-```
+```text
 panic: goid
 
 goroutine 1 [running]:
 main.main()
-	/path/to/main.go:4 +0x40
+    /path/to/main.go:4 +0x40
 ```
 
 我们可以猜测Panic输出信息`goroutine 1 [running]`中的1就是goid。但是如何才能在程序中获取panic的输出信息呢？其实上述信息只是当前函数调用栈帧的文字化描述，runtime.Stack函数提供了获取该信息的功能。
@@ -42,86 +42,85 @@ package main
 import "runtime"
 
 func main() {
-	var buf = make([]byte, 64)
-	var stk = buf[:runtime.Stack(buf, false)]
-	print(string(stk))
+    var buf = make([]byte, 64)
+    var stk = buf[:runtime.Stack(buf, false)]
+    print(string(stk))
 }
 ```
 
 运行后将输出以下信息：
 
-```
+```text
 goroutine 1 [running]:
 main.main()
-	/path/to/main.g
+    /path/to/main.g
 ```
 
 因此从runtime.Stack获取的字符串中就可以很容易解析出goid信息：
 
 ```go
 func GetGoid() int64 {
-	var (
-		buf [64]byte
-		n   = runtime.Stack(buf[:], false)
-		stk = strings.TrimPrefix(string(buf[:n]), "goroutine ")
-	)
+    var (
+        buf [64]byte
+        n   = runtime.Stack(buf[:], false)
+        stk = strings.TrimPrefix(string(buf[:n]), "goroutine ")
+    )
 
-	idField := strings.Fields(stk)[0]
-	id, err := strconv.Atoi(idField)
-	if err != nil {
-		panic(fmt.Errorf("can not get goroutine id: %v", err))
-	}
+    idField := strings.Fields(stk)[0]
+    id, err := strconv.Atoi(idField)
+    if err != nil {
+        panic(fmt.Errorf("can not get goroutine id: %v", err))
+    }
 
-	return int64(id)
+    return int64(id)
 }
 ```
 
 GetGoid函数的细节我们不再赘述。需要补充说明的是`runtime.Stack`函数不仅仅可以获取当前Goroutine的栈信息，还可以获取全部Goroutine的栈信息（通过第二个参数控制）。同时在Go语言内部的 [net/http2.curGoroutineID](https://github.com/golang/net/blob/master/http2/gotrack.go) 函数正是采用类似方式获取的goid。
 
-
 ## 3.8.3 从g结构体获取goid
 
 根据官方的Go汇编语言文档，每个运行的Goroutine结构的g指针保存在当前运行Goroutine的系统线程的局部存储TLS中。可以先获取TLS线程局部存储，然后再从TLS中获取g结构的指针，最后从g结构中取出goid。
 
-下面是参考runtime包中定义的get_tls宏获取g指针：
+下面是参考runtime包中定义的get\_tls宏获取g指针：
 
-```
+```text
 get_tls(CX)
 MOVQ g(CX), AX     // Move g into AX.
 ```
 
-其中get_tls是一个宏函数，在 [runtime/go_tls.h](https://github.com/golang/go/blob/master/src/runtime/go_tls.h) 头文件中定义。
+其中get\_tls是一个宏函数，在 [runtime/go\_tls.h](https://github.com/golang/go/blob/master/src/runtime/go_tls.h) 头文件中定义。
 
-对于AMD64平台，get_tls宏函数定义如下：
+对于AMD64平台，get\_tls宏函数定义如下：
 
-```
+```text
 #ifdef GOARCH_amd64
-#define	get_tls(r)	MOVQ TLS, r
-#define	g(r)	0(r)(TLS*1)
+#define    get_tls(r)    MOVQ TLS, r
+#define    g(r)    0(r)(TLS*1)
 #endif
 ```
 
-将get_tls宏函数展开之后，获取g指针的代码如下：
+将get\_tls宏函数展开之后，获取g指针的代码如下：
 
-```
+```text
 MOVQ TLS, CX
 MOVQ 0(CX)(TLS*1), AX
 ```
 
 其实TLS类似线程局部存储的地址，地址对应的内存里的数据才是g指针。我们还可以更直接一点:
 
-```
+```text
 MOVQ (TLS), AX
 ```
 
 基于上述方法可以包装一个getg函数，用于获取g指针：
 
-```
+```text
 // func getg() unsafe.Pointer
 TEXT ·getg(SB), NOSPLIT, $0-8
-	MOVQ (TLS), AX
-	MOVQ AX, ret+0(FP)
-	RET
+    MOVQ (TLS), AX
+    MOVQ AX, ret+0(FP)
+    RET
 ```
 
 然后在Go代码中通过goid成员在g结构体中的偏移量来获取goid的值：
@@ -130,9 +129,9 @@ TEXT ·getg(SB), NOSPLIT, $0-8
 const g_goid_offset = 152 // Go1.10
 
 func GetGroutineId() int64 {
-	g := getg()
-	p := (*int64)(unsafe.Pointer(uintptr(g) + g_goid_offset))
-	return *p
+    g := getg()
+    p := (*int64)(unsafe.Pointer(uintptr(g) + g_goid_offset))
+    return *p
 }
 ```
 
@@ -144,24 +143,23 @@ func GetGroutineId() int64 {
 
 ```go
 var offsetDictMap = map[string]int64{
-	"go1.10": 152,
-	"go1.9":  152,
-	"go1.8":  192,
+    "go1.10": 152,
+    "go1.9":  152,
+    "go1.8":  192,
 }
 
 var g_goid_offset = func() int64 {
-	goversion := runtime.Version()
-	for key, off := range offsetDictMap {
-		if goversion == key || strings.HasPrefix(goversion, key) {
-			return off
-		}
-	}
-	panic("unsupported go version:"+goversion)
+    goversion := runtime.Version()
+    for key, off := range offsetDictMap {
+        if goversion == key || strings.HasPrefix(goversion, key) {
+            return off
+        }
+    }
+    panic("unsupported go version:"+goversion)
 }()
 ```
 
 现在的goid偏移量已经终于可以自动适配已经发布的Go语言版本。
-
 
 ## 3.8.4 获取g结构体对应的接口对象
 
@@ -173,25 +171,25 @@ var g_goid_offset = func() int64 {
 
 如果我们能够拿到表示g结构体类型的`type·runtime·g`和g指针，那么就可以构造g对象的接口。下面是改进的getg函数，返回g指针对象的接口：
 
-```
+```text
 // func getg() interface{}
 TEXT ·getg(SB), NOSPLIT, $32-16
-	// get runtime.g
-	MOVQ (TLS), AX
-	// get runtime.g type
-	MOVQ $type·runtime·g(SB), BX
+    // get runtime.g
+    MOVQ (TLS), AX
+    // get runtime.g type
+    MOVQ $type·runtime·g(SB), BX
 
-	// convert (*g) to interface{}
-	MOVQ AX, 8(SP)
-	MOVQ BX, 0(SP)
-	CALL runtime·convT2E(SB)
-	MOVQ 16(SP), AX
-	MOVQ 24(SP), BX
+    // convert (*g) to interface{}
+    MOVQ AX, 8(SP)
+    MOVQ BX, 0(SP)
+    CALL runtime·convT2E(SB)
+    MOVQ 16(SP), AX
+    MOVQ 24(SP), BX
 
-	// return interface{}
-	MOVQ AX, ret+0(FP)
-	MOVQ BX, ret+8(FP)
-	RET
+    // return interface{}
+    MOVQ AX, ret+0(FP)
+    MOVQ BX, ret+8(FP)
+    RET
 ```
 
 其中AX寄存器对应g指针，BX寄存器对应g结构体的类型。然后通过runtime·convT2E函数将类型转为接口。因为我们使用的不是g结构体指针类型，因此返回的接口表示的g结构体值类型。理论上我们也可以构造g指针类型的接口，但是因为Go汇编语言的限制，我们无法使用`type·*runtime·g`标识符。
@@ -200,9 +198,9 @@ TEXT ·getg(SB), NOSPLIT, $32-16
 
 ```go
 func GetGoid() int64 {
-	g := getg()
-	gid := reflect.ValueOf(g).FieldByName("goid").Int()
-	return goid
+    g := getg()
+    gid := reflect.ValueOf(g).FieldByName("goid").Int()
+    return goid
 }
 ```
 
@@ -210,26 +208,25 @@ func GetGoid() int64 {
 
 反射虽然具备一定的灵活性，但是反射的性能一直是被大家诟病的地方。一个改进的思路是通过反射获取goid的偏移量，然后通过g指针和偏移量获取goid，这样反射只需要在初始化阶段执行一次。
 
-下面是g_goid_offset变量的初始化代码：
+下面是g\_goid\_offset变量的初始化代码：
 
 ```go
 var g_goid_offset uintptr = func() uintptr {
-	g := GetGroutine()
-	if f, ok := reflect.TypeOf(g).FieldByName("goid"); ok {
-		return f.Offset
-	}
-	panic("can not find g.goid field")
+    g := GetGroutine()
+    if f, ok := reflect.TypeOf(g).FieldByName("goid"); ok {
+        return f.Offset
+    }
+    panic("can not find g.goid field")
 }()
 ```
 
 有了正确的goid偏移量之后，采用前面讲过的方式获取goid：
 
-
 ```go
 func GetGroutineId() int64 {
-	g := getg()
-	p := (*int64)(unsafe.Pointer(uintptr(g) + g_goid_offset))
-	return *p
+    g := getg()
+    p := (*int64)(unsafe.Pointer(uintptr(g) + g_goid_offset))
+    return *p
 }
 ```
 
@@ -239,36 +236,35 @@ func GetGroutineId() int64 {
 
 下面是改进后的getg函数的完整实现：
 
-```
+```text
 // func getg() interface{}
 TEXT ·getg(SB), NOSPLIT, $32-16
-	NO_LOCAL_POINTERS
+    NO_LOCAL_POINTERS
 
-	MOVQ $0, ret_type+0(FP)
-	MOVQ $0, ret_data+8(FP)
-	GO_RESULTS_INITIALIZED
+    MOVQ $0, ret_type+0(FP)
+    MOVQ $0, ret_data+8(FP)
+    GO_RESULTS_INITIALIZED
 
-	// get runtime.g
-	MOVQ (TLS), AX
+    // get runtime.g
+    MOVQ (TLS), AX
 
-	// get runtime.g type
-	MOVQ $type·runtime·g(SB), BX
+    // get runtime.g type
+    MOVQ $type·runtime·g(SB), BX
 
-	// convert (*g) to interface{}
-	MOVQ AX, 8(SP)
-	MOVQ BX, 0(SP)
-	CALL runtime·convT2E(SB)
-	MOVQ 16(SP), AX
-	MOVQ 24(SP), BX
+    // convert (*g) to interface{}
+    MOVQ AX, 8(SP)
+    MOVQ BX, 0(SP)
+    CALL runtime·convT2E(SB)
+    MOVQ 16(SP), AX
+    MOVQ 24(SP), BX
 
-	// return interface{}
-	MOVQ AX, ret_type+0(FP)
-	MOVQ BX, ret_data+8(FP)
-	RET
+    // return interface{}
+    MOVQ AX, ret_type+0(FP)
+    MOVQ BX, ret_data+8(FP)
+    RET
 ```
 
-其中NO_LOCAL_POINTERS表示函数没有局部指针变量。同时对返回的接口进行零值初始化，初始化完成后通过GO_RESULTS_INITIALIZED告知GC。这样可以在保证栈分裂时，GC能够正确处理返回值和局部变量中的指针。
-
+其中NO\_LOCAL\_POINTERS表示函数没有局部指针变量。同时对返回的接口进行零值初始化，初始化完成后通过GO\_RESULTS\_INITIALIZED告知GC。这样可以在保证栈分裂时，GC能够正确处理返回值和局部变量中的指针。
 
 ## 3.8.5 goid的应用: 局部存储
 
@@ -278,12 +274,12 @@ TEXT ·getg(SB), NOSPLIT, $32-16
 package gls
 
 var gls struct {
-	m map[int64]map[interface{}]interface{}
-	sync.Mutex
+    m map[int64]map[interface{}]interface{}
+    sync.Mutex
 }
 
 func init() {
-	gls.m = make(map[int64]map[interface{}]interface{})
+    gls.m = make(map[int64]map[interface{}]interface{})
 }
 ```
 
@@ -293,17 +289,17 @@ gls包变量简单包装了map，同时通过`sync.Mutex`互斥量支持并发�
 
 ```go
 func getMap() map[interface{}]interface{} {
-	gls.Lock()
-	defer gls.Unlock()
+    gls.Lock()
+    defer gls.Unlock()
 
-	goid := GetGoid()
-	if m, _ := gls.m[goid]; m != nil {
-		return m
-	}
+    goid := GetGoid()
+    if m, _ := gls.m[goid]; m != nil {
+        return m
+    }
 
-	m := make(map[interface{}]interface{})
-	gls.m[goid] = m
-	return m
+    m := make(map[interface{}]interface{})
+    gls.m[goid] = m
+    return m
 }
 ```
 
@@ -311,13 +307,13 @@ func getMap() map[interface{}]interface{} {
 
 ```go
 func Get(key interface{}) interface{} {
-	return getMap()[key]
+    return getMap()[key]
 }
 func Put(key interface{}, v interface{}) {
-	getMap()[key] = v
+    getMap()[key] = v
 }
 func Delete(key interface{}) {
-	delete(getMap(), key)
+    delete(getMap(), key)
 }
 ```
 
@@ -325,10 +321,10 @@ func Delete(key interface{}) {
 
 ```go
 func Clean() {
-	gls.Lock()
-	defer gls.Unlock()
+    gls.Lock()
+    defer gls.Unlock()
 
-	delete(gls.m, GetGoid())
+    delete(gls.m, GetGoid())
 }
 ```
 
@@ -338,26 +334,26 @@ func Clean() {
 
 ```go
 import (
-	gls "path/to/gls"
+    gls "path/to/gls"
 )
 
 func main() {
-	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			defer gls.Clean()
+    var wg sync.WaitGroup
+    for i := 0; i < 5; i++ {
+        wg.Add(1)
+        go func(idx int) {
+            defer wg.Done()
+            defer gls.Clean()
 
-			defer func() {
-				fmt.Printf("%d: number = %d\n", idx, gls.Get("number"))
-			}()
-			gls.Put("number", idx+100)
-		}(i)
-	}
-	wg.Wait()
+            defer func() {
+                fmt.Printf("%d: number = %d\n", idx, gls.Get("number"))
+            }()
+            gls.Put("number", idx+100)
+        }(i)
+    }
+    wg.Wait()
 }
 ```
 
-通过Goroutine局部存储，不同层次函数之间可以共享存储资源。同时为了避免资源泄漏，需要在Goroutine的根函数中，通过defer语句调用gls.Clean()函数释放资源。
+通过Goroutine局部存储，不同层次函数之间可以共享存储资源。同时为了避免资源泄漏，需要在Goroutine的根函数中，通过defer语句调用gls.Clean\(\)函数释放资源。
 

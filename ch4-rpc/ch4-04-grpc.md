@@ -6,9 +6,9 @@ gRPC是Google公司基于Protobuf开发的跨语言的开源RPC框架。gRPC基�
 
 Go语言的gRPC技术栈如图4-1所示：
 
-![](../images/ch4-1-grpc-go-stack.png)
+![](../.gitbook/assets/ch4-1-grpc-go-stack.png)
 
-*图4-1 gRPC技术栈*
+_图4-1 gRPC技术栈_
 
 最底层为TCP或Unix Socket协议，在此之上是HTTP/2协议的实现，然后在HTTP/2协议之上又构建了针对Go语言的gRPC核心库。应用程序通过gRPC插件生产的Stub代码和gRPC核心库通信，也可以直接和gRPC核心库通信。
 
@@ -18,23 +18,23 @@ Go语言的gRPC技术栈如图4-1所示：
 
 创建hello.proto文件，定义HelloService接口：
 
-```proto
+```text
 syntax = "proto3";
 
 package main;
 
 message String {
-	string value = 1;
+    string value = 1;
 }
 
 service HelloService {
-	rpc Hello (String) returns (String);
+    rpc Hello (String) returns (String);
 }
 ```
 
 使用protoc-gen-go内置的gRPC插件生成gRPC代码：
 
-```
+```text
 $ protoc --go_out=plugins=grpc:. hello.proto
 ```
 
@@ -42,11 +42,11 @@ gRPC插件会为服务端和客户端生成不同的接口：
 
 ```go
 type HelloServiceServer interface {
-	Hello(context.Context, *String) (*String, error)
+    Hello(context.Context, *String) (*String, error)
 }
 
 type HelloServiceClient interface {
-	Hello(context.Context, *String, ...grpc.CallOption) (*String, error)
+    Hello(context.Context, *String, ...grpc.CallOption) (*String, error)
 }
 ```
 
@@ -58,10 +58,10 @@ gRPC通过context.Context参数，为每个方法调用提供了上下文支持�
 type HelloServiceImpl struct{}
 
 func (p *HelloServiceImpl) Hello(
-	ctx context.Context, args *String,
+    ctx context.Context, args *String,
 ) (*String, error) {
-	reply := &String{Value: "hello:" + args.GetValue()}
-	return reply, nil
+    reply := &String{Value: "hello:" + args.GetValue()}
+    return reply, nil
 }
 ```
 
@@ -69,14 +69,14 @@ gRPC服务的启动流程和标准库的RPC服务启动流程类似：
 
 ```go
 func main() {
-	grpcServer := grpc.NewServer()
-	RegisterHelloServiceServer(grpcServer, new(HelloServiceImpl))
+    grpcServer := grpc.NewServer()
+    RegisterHelloServiceServer(grpcServer, new(HelloServiceImpl))
 
-	lis, err := net.Listen("tcp", ":1234")
-	if err != nil {
-		log.Fatal(err)
-	}
-	grpcServer.Serve(lis)
+    lis, err := net.Listen("tcp", ":1234")
+    if err != nil {
+        log.Fatal(err)
+    }
+    grpcServer.Serve(lis)
 }
 ```
 
@@ -86,18 +86,18 @@ func main() {
 
 ```go
 func main() {
-	conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
+    conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
 
-	client := NewHelloServiceClient(conn)
-	reply, err := client.Hello(context.Background(), &String{Value: "hello"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(reply.GetValue())
+    client := NewHelloServiceClient(conn)
+    reply, err := client.Hello(context.Background(), &String{Value: "hello"})
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(reply.GetValue())
 }
 ```
 
@@ -111,11 +111,11 @@ RPC是远程函数调用，因此每次调用的函数参数和返回值不能�
 
 服务端或客户端的单向流是双向流的特例，我们在HelloService增加一个支持双向流的Channel方法：
 
-```proto
+```text
 service HelloService {
-	rpc Hello (String) returns (String);
+    rpc Hello (String) returns (String);
 
-	rpc Channel (stream String) returns (stream String);
+    rpc Channel (stream String) returns (stream String);
 }
 ```
 
@@ -125,34 +125,34 @@ service HelloService {
 
 ```go
 type HelloServiceServer interface {
-	Hello(context.Context, *String) (*String, error)
-	Channel(HelloService_ChannelServer) error
+    Hello(context.Context, *String) (*String, error)
+    Channel(HelloService_ChannelServer) error
 }
 type HelloServiceClient interface {
-	Hello(ctx context.Context, in *String, opts ...grpc.CallOption) (
-		*String, error,
-	)
-	Channel(ctx context.Context, opts ...grpc.CallOption) (
-		HelloService_ChannelClient, error,
-	)
+    Hello(ctx context.Context, in *String, opts ...grpc.CallOption) (
+        *String, error,
+    )
+    Channel(ctx context.Context, opts ...grpc.CallOption) (
+        HelloService_ChannelClient, error,
+    )
 }
 ```
 
-在服务端的Channel方法参数是一个新的HelloService_ChannelServer类型的参数，可以用于和客户端双向通信。客户端的Channel方法返回一个HelloService_ChannelClient类型的返回值，可以用于和服务端进行双向通信。
+在服务端的Channel方法参数是一个新的HelloService\_ChannelServer类型的参数，可以用于和客户端双向通信。客户端的Channel方法返回一个HelloService\_ChannelClient类型的返回值，可以用于和服务端进行双向通信。
 
-HelloService_ChannelServer和HelloService_ChannelClient均为接口类型：
+HelloService\_ChannelServer和HelloService\_ChannelClient均为接口类型：
 
 ```go
 type HelloService_ChannelServer interface {
-	Send(*String) error
-	Recv() (*String, error)
-	grpc.ServerStream
+    Send(*String) error
+    Recv() (*String, error)
+    grpc.ServerStream
 }
 
 type HelloService_ChannelClient interface {
-	Send(*String) error
-	Recv() (*String, error)
-	grpc.ClientStream
+    Send(*String) error
+    Recv() (*String, error)
+    grpc.ClientStream
 }
 ```
 
@@ -162,22 +162,22 @@ type HelloService_ChannelClient interface {
 
 ```go
 func (p *HelloServiceImpl) Channel(stream HelloService_ChannelServer) error {
-	for {
-		args, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
+    for {
+        args, err := stream.Recv()
+        if err != nil {
+            if err == io.EOF {
+                return nil
+            }
+            return err
+        }
 
-		reply := &String{Value: "hello:" + args.GetValue()}
+        reply := &String{Value: "hello:" + args.GetValue()}
 
-		err = stream.Send(reply)
-		if err != nil {
-			return err
-		}
-	}
+        err = stream.Send(reply)
+        if err != nil {
+            return err
+        }
+    }
 }
 ```
 
@@ -188,7 +188,7 @@ func (p *HelloServiceImpl) Channel(stream HelloService_ChannelServer) error {
 ```go
 stream, err := client.Channel(context.Background())
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 ```
 
@@ -196,12 +196,12 @@ if err != nil {
 
 ```go
 go func() {
-	for {
-		if err := stream.Send(&String{Value: "hi"}); err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(time.Second)
-	}
+    for {
+        if err := stream.Send(&String{Value: "hi"}); err != nil {
+            log.Fatal(err)
+        }
+        time.Sleep(time.Second)
+    }
 }()
 ```
 
@@ -209,14 +209,14 @@ go func() {
 
 ```go
 for {
-	reply, err := stream.Recv()
-	if err != nil {
-		if err == io.EOF {
-			break
-		}
-		log.Fatal(err)
-	}
-	fmt.Println(reply.GetValue())
+    reply, err := stream.Recv()
+    if err != nil {
+        if err == io.EOF {
+            break
+        }
+        log.Fatal(err)
+    }
+    fmt.Println(reply.GetValue())
 }
 ```
 
@@ -230,42 +230,42 @@ for {
 
 ```go
 import (
-	"github.com/moby/moby/pkg/pubsub"
+    "github.com/moby/moby/pkg/pubsub"
 )
 
 func main() {
-	p := pubsub.NewPublisher(100*time.Millisecond, 10)
+    p := pubsub.NewPublisher(100*time.Millisecond, 10)
 
-	golang := p.SubscribeTopic(func(v interface{}) bool {
-		if key, ok := v.(string); ok {
-			if strings.HasPrefix(key, "golang:") {
-				return true
-			}
-		}
-		return false
-	})
-	docker := p.SubscribeTopic(func(v interface{}) bool {
-		if key, ok := v.(string); ok {
-			if strings.HasPrefix(key, "docker:") {
-				return true
-			}
-		}
-		return false
-	})
+    golang := p.SubscribeTopic(func(v interface{}) bool {
+        if key, ok := v.(string); ok {
+            if strings.HasPrefix(key, "golang:") {
+                return true
+            }
+        }
+        return false
+    })
+    docker := p.SubscribeTopic(func(v interface{}) bool {
+        if key, ok := v.(string); ok {
+            if strings.HasPrefix(key, "docker:") {
+                return true
+            }
+        }
+        return false
+    })
 
-	go p.Publish("hi")
-	go p.Publish("golang: https://golang.org")
-	go p.Publish("docker: https://www.docker.com/")
-	time.Sleep(1)
+    go p.Publish("hi")
+    go p.Publish("golang: https://golang.org")
+    go p.Publish("docker: https://www.docker.com/")
+    time.Sleep(1)
 
-	go func() {
-		fmt.Println("golang topic:", <-golang)
-	}()
-	go func() {
-		fmt.Println("docker topic:", <-docker)
-	}()
+    go func() {
+        fmt.Println("golang topic:", <-golang)
+    }()
+    go func() {
+        fmt.Println("docker topic:", <-docker)
+    }()
 
-	<-make(chan bool)
+    <-make(chan bool)
 }
 ```
 
@@ -273,10 +273,10 @@ func main() {
 
 现在尝试基于gRPC和pubsub包，提供一个跨网络的发布和订阅系统。首先通过Protobuf定义一个发布订阅服务接口：
 
-```protobuf
+```text
 service PubsubService {
-	rpc Publish (String) returns (String);
-	rpc Subscribe (String) returns (stream String);
+    rpc Publish (String) returns (String);
+    rpc Subscribe (String) returns (stream String);
 }
 ```
 
@@ -284,35 +284,35 @@ service PubsubService {
 
 ```go
 type PubsubServiceServer interface {
-	Publish(context.Context, *String) (*String, error)
-	Subscribe(*String, PubsubService_SubscribeServer) error
+    Publish(context.Context, *String) (*String, error)
+    Subscribe(*String, PubsubService_SubscribeServer) error
 }
 type PubsubServiceClient interface {
-	Publish(context.Context, *String, ...grpc.CallOption) (*String, error)
-	Subscribe(context.Context, *String, ...grpc.CallOption) (
-		PubsubService_SubscribeClient, error,
-	)
+    Publish(context.Context, *String, ...grpc.CallOption) (*String, error)
+    Subscribe(context.Context, *String, ...grpc.CallOption) (
+        PubsubService_SubscribeClient, error,
+    )
 }
 
 type PubsubService_SubscribeServer interface {
-	Send(*String) error
-	grpc.ServerStream
+    Send(*String) error
+    grpc.ServerStream
 }
 ```
 
-因为Subscribe是服务端的单向流，因此生成的HelloService_SubscribeServer接口中只有Send方法。
+因为Subscribe是服务端的单向流，因此生成的HelloService\_SubscribeServer接口中只有Send方法。
 
 然后就可以实现发布和订阅服务了：
 
 ```go
 type PubsubService struct {
-	pub *pubsub.Publisher
+    pub *pubsub.Publisher
 }
 
 func NewPubsubService() *PubsubService {
-	return &PubsubService{
-		pub: pubsub.NewPublisher(100*time.Millisecond, 10),
-	}
+    return &PubsubService{
+        pub: pubsub.NewPublisher(100*time.Millisecond, 10),
+    }
 }
 ```
 
@@ -320,31 +320,31 @@ func NewPubsubService() *PubsubService {
 
 ```go
 func (p *PubsubService) Publish(
-	ctx context.Context, arg *String,
+    ctx context.Context, arg *String,
 ) (*String, error) {
-	p.pub.Publish(arg.GetValue())
-	return &String{}, nil
+    p.pub.Publish(arg.GetValue())
+    return &String{}, nil
 }
 
 func (p *PubsubService) Subscribe(
-	arg *String, stream PubsubService_SubscribeServer,
+    arg *String, stream PubsubService_SubscribeServer,
 ) error {
-	ch := p.pub.SubscribeTopic(func(v interface{}) bool {
-		if key, ok := v.(string); ok {
-			if strings.HasPrefix(key,arg.GetValue()) {
-				return true
-			}
-		}
-		return false
-	})
+    ch := p.pub.SubscribeTopic(func(v interface{}) bool {
+        if key, ok := v.(string); ok {
+            if strings.HasPrefix(key,arg.GetValue()) {
+                return true
+            }
+        }
+        return false
+    })
 
-	for v := range ch {
-		if err := stream.Send(&String{Value: v.(string)}); err != nil {
-			return err
-		}
-	}
+    for v := range ch {
+        if err := stream.Send(&String{Value: v.(string)}); err != nil {
+            return err
+        }
+    }
 
-	return nil
+    return nil
 }
 ```
 
@@ -352,26 +352,26 @@ func (p *PubsubService) Subscribe(
 
 ```go
 func main() {
-	conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
+    conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
 
-	client := NewPubsubServiceClient(conn)
+    client := NewPubsubServiceClient(conn)
 
-	_, err = client.Publish(
-		context.Background(), &String{Value: "golang: hello Go"},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = client.Publish(
-		context.Background(), &String{Value: "docker: hello Docker"},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+    _, err = client.Publish(
+        context.Background(), &String{Value: "golang: hello Go"},
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    _, err = client.Publish(
+        context.Background(), &String{Value: "docker: hello Docker"},
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -379,31 +379,31 @@ func main() {
 
 ```go
 func main() {
-	conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
+    conn, err := grpc.Dial("localhost:1234", grpc.WithInsecure())
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
 
-	client := NewPubsubServiceClient(conn)
-	stream, err := client.Subscribe(
-		context.Background(), &String{Value: "golang:"},
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+    client := NewPubsubServiceClient(conn)
+    stream, err := client.Subscribe(
+        context.Background(), &String{Value: "golang:"},
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	for {
-		reply, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			log.Fatal(err)
-		}
+    for {
+        reply, err := stream.Recv()
+        if err != nil {
+            if err == io.EOF {
+                break
+            }
+            log.Fatal(err)
+        }
 
-		fmt.Println(reply.GetValue())
-	}
+        fmt.Println(reply.GetValue())
+    }
 }
 ```
 

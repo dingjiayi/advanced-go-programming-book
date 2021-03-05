@@ -1,4 +1,4 @@
-# 5.5 Database 和数据库打交道
+# 5.5 和数据库打交道
 
 本节将对`db/sql`官方标准库作一些简单分析，并介绍一些应用比较广泛的开源ORM和SQL Builder。并从企业级应用开发和公司架构的角度来分析哪种技术栈对于现代的企业级应用更为合适。
 
@@ -23,7 +23,7 @@ import _ "github.com/go-sql-driver/mysql"
 
 ```go
 func init() {
-	sql.Register("mysql", &MySQLDriver{})
+    sql.Register("mysql", &MySQLDriver{})
 }
 ```
 
@@ -31,7 +31,7 @@ func init() {
 
 ```go
 type Driver interface {
-	Open(name string) (Conn, error)
+    Open(name string) (Conn, error)
 }
 ```
 
@@ -39,9 +39,9 @@ type Driver interface {
 
 ```go
 type Conn interface {
-	Prepare(query string) (Stmt, error)
-	Close() error
-	Begin() (Tx, error)
+    Prepare(query string) (Stmt, error)
+    Close() error
+    Begin() (Tx, error)
 }
 ```
 
@@ -53,46 +53,46 @@ type Conn interface {
 package main
 
 import (
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+    "database/sql"
+    _ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
-	// db 是一个 sql.DB 类型的对象
-	// 该对象线程安全，且内部已包含了一个连接池
-	// 连接池的选项可以在 sql.DB 的方法中设置，这里为了简单省略了
-	db, err := sql.Open("mysql",
-		"user:password@tcp(127.0.0.1:3306)/hello")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+    // db 是一个 sql.DB 类型的对象
+    // 该对象线程安全，且内部已包含了一个连接池
+    // 连接池的选项可以在 sql.DB 的方法中设置，这里为了简单省略了
+    db, err := sql.Open("mysql",
+        "user:password@tcp(127.0.0.1:3306)/hello")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
 
-	var (
-		id int
-		name string
-	)
-	rows, err := db.Query("select id, name from users where id = ?", 1)
-	if err != nil {
-		log.Fatal(err)
-	}
+    var (
+        id int
+        name string
+    )
+    rows, err := db.Query("select id, name from users where id = ?", 1)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	defer rows.Close()
+    defer rows.Close()
 
-	// 必须要把 rows 里的内容读完，或者显式调用 Close() 方法，
-	// 否则在 defer 的 rows.Close() 执行之前，连接永远不会释放
-	for rows.Next() {
-		err := rows.Scan(&id, &name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println(id, name)
-	}
+    // 必须要把 rows 里的内容读完，或者显式调用 Close() 方法，
+    // 否则在 defer 的 rows.Close() 执行之前，连接永远不会释放
+    for rows.Next() {
+        err := rows.Scan(&id, &name)
+        if err != nil {
+            log.Fatal(err)
+        }
+        log.Println(id, name)
+    }
 
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
+    err = rows.Err()
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -108,7 +108,7 @@ func main() {
 
 在Web开发领域常常提到的ORM是什么？我们先看看万能的维基百科：
 
-```
+```text
 对象关系映射（英语：Object Relational Mapping，简称ORM，或O/RM，或O/R mapping），
 是一种程序设计技术，用于实现面向对象编程语言里不同类型系统的数据之间的转换。
 从效果上说，它其实是创建了一个可在编程语言里使用的“虚拟对象数据库”。
@@ -128,7 +128,7 @@ func main() {
 # 伪代码
 shopList := []
 for product in productList {
-	shopList = append(shopList, product.GetShop)
+    shopList = append(shopList, product.GetShop)
 }
 ```
 
@@ -161,8 +161,8 @@ num, err := o.QueryTable("cardgroup").Filter("Cards__Card__Name", cardName).All(
 
 ```go
 where := map[string]interface{} {
-	"order_id > ?" : 0,
-	"customer_id != ?" : 0,
+    "order_id > ?" : 0,
+    "customer_id != ?" : 0,
 }
 limit := []int{0,100}
 orderBy := []string{"id asc", "create_time desc"}
@@ -184,12 +184,12 @@ orders := orderModel.GetList(where, limit, orderBy)
 
 ```go
 where := map[string]interface{} {
-	"product_id = ?" : 10,
-	"user_id = ?" : 1232 ,
+    "product_id = ?" : 10,
+    "user_id = ?" : 1232 ,
 }
 
 if order_id != 0 {
-	where["order_id = ?"] = order_id
+    where["order_id = ?"] = order_id
 }
 
 res, err := historyModel.GetList(where, limit, orderBy)
@@ -207,7 +207,7 @@ res, err := historyModel.GetList(where, limit, orderBy)
 
 ```go
 const (
-	getAllByProductIDAndCustomerID = `select * from p_orders where product_id in (:product_id) and customer_id=:customer_id`
+    getAllByProductIDAndCustomerID = `select * from p_orders where product_id in (:product_id) and customer_id=:customer_id`
 )
 
 // GetAllByProductIDAndCustomerID
@@ -215,28 +215,29 @@ const (
 // @param rate_date
 // @return []Order, error
 func GetAllByProductIDAndCustomerID(ctx context.Context, productIDs []uint64, customerID uint64) ([]Order, error) {
-	var orderList []Order
+    var orderList []Order
 
-	params := map[string]interface{}{
-		"product_id" : productIDs,
-		"customer_id": customerID,
-	}
+    params := map[string]interface{}{
+        "product_id" : productIDs,
+        "customer_id": customerID,
+    }
 
-	// getAllByProductIDAndCustomerID 是 const 类型的 sql 字符串
-	sql, args, err := sqlutil.Named(getAllByProductIDAndCustomerID, params)
-	if err != nil {
-		return nil, err
-	}
+    // getAllByProductIDAndCustomerID 是 const 类型的 sql 字符串
+    sql, args, err := sqlutil.Named(getAllByProductIDAndCustomerID, params)
+    if err != nil {
+        return nil, err
+    }
 
-	err = dao.QueryList(ctx, sqldbInstance, sql, args, &orderList)
-	if err != nil {
-		return nil, err
-	}
+    err = dao.QueryList(ctx, sqldbInstance, sql, args, &orderList)
+    if err != nil {
+        return nil, err
+    }
 
-	return orderList, err
+    return orderList, err
 }
 ```
 
 像这样的代码，在上线之前把DAO层的变更集的const部分直接拿给DBA来进行审核，就比较方便了。代码中的 sqlutil.Named 是类似于 sqlx 中的 Named 函数，同时支持 where 表达式中的比较操作符和 in。
 
 这里为了说明简便，函数写得稍微复杂一些，仔细思考一下的话查询的导出函数还可以进一步进行简化。请读者朋友们自行尝试。
+
